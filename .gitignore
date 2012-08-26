@@ -25,3 +25,9 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+#Database files
+*.db
+
+#Mako templates compilation directory
+templates/compiled/

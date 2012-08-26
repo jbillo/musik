@@ -3,6 +3,9 @@ import re
  
 import cherrypy
 from cherrypy.process import wspbus, plugins
+
+from mako.template import Template
+from mako.lookup import TemplateLookup
  
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -12,6 +15,9 @@ from sqlalchemy.types import String, Integer
  
 # Helper to map and register a Python class a db table
 Base = declarative_base()
+
+# Template looker-upper that handles loading and caching of mako templates
+templates = TemplateLookup(directories=['templates'], module_directory='templates/compiled')
 
 # Represents a media file on the local hard drive
 class Media(Base):
@@ -46,7 +52,7 @@ class SAEnginePlugin(plugins.SimplePlugin):
         self.bus.subscribe("bind", self.bind)
  
     def start(self):
-        db_path = os.path.abspath(os.path.join(os.curdir, 'my.db'))
+        db_path = os.path.abspath(os.path.join(os.curdir, 'musik.db'))
         self.sa_engine = create_engine('sqlite:///%s' % db_path, echo=True)
         Base.metadata.create_all(self.sa_engine)
  
@@ -84,11 +90,25 @@ class SATool(cherrypy.Tool):
             self.session.remove()
 
 
+# provides functionality for adding new media to the database
+class Import:
+
+	@cherrypy.expose
+	def directory(self, path):
+		return "Importing the directory %s" % path
+
+	@cherrypy.expose
+	def file(self, path):
+		return "Importing the file %s" % path
+
+
 # defines an api with a dynamic url scheme composed of /<tag>/<value>/ pairs
 # these pairs are assembled into an SQL query. Each term is combined with the AND operator.
 # unknown <tag> elements are ignored.
 class API:
+	importmedia = Import()
 
+	@cherrypy.expose
 	def default(self, *params):
 		#TODO: pull all available tags from the database so this regex is dynamic and allows any tag
 		regex = re.compile("genre|artist|album|track")
@@ -105,7 +125,6 @@ class API:
 					str += "* <br />"
 
 		return str
-	default.exposed = True
 
 
 # defines the web application that is the default client
@@ -114,8 +133,13 @@ class Musik:
 
 	@cherrypy.expose
 	def index(self):
-		media = [str(path) for path in Media.list(cherrypy.request.db)]
-		return "Media in the library: %s" % '\n'.join(media)
+		#media = [str(path) for path in Media.list(cherrypy.request.db)]
+		#return "Media in the library: %s" % '\n'.join(media)
+		return templates.get_template('index.html').render()
+
+	@cherrypy.expose
+	def importmedia(self):
+		return ""
 
 
 # application entry - starts the database connection and dev server
