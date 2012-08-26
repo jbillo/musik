@@ -1,5 +1,88 @@
-import cherrypy
+import os, os.path
 import re
+ 
+import cherrypy
+from cherrypy.process import wspbus, plugins
+ 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column
+from sqlalchemy.types import String, Integer
+ 
+# Helper to map and register a Python class a db table
+Base = declarative_base()
+
+# Represents a media file on the local hard drive
+class Media(Base):
+	__tablename__ = 'media'
+	id = Column(Integer, primary_key=True)
+	path = Column(String)
+
+	def __init__(self, path):
+		Base.__init__(self)
+		self.path = path
+
+	def __str__(self):
+		return self.path.encode('utf-8')
+
+	def __unicode__(self):
+		return self.path
+
+	@staticmethod
+	def list(session):
+		return session.query(Media).all()
+
+
+#TODO: create an object to represent tags for media objects
+
+ 
+ # A plugin to help SQLAlchemy bind correctly to CherryPy threads
+ # See http://www.defuze.org/archives/222-integrating-sqlalchemy-into-a-cherrypy-application.html
+class SAEnginePlugin(plugins.SimplePlugin):
+    def __init__(self, bus):
+        plugins.SimplePlugin.__init__(self, bus)
+        self.sa_engine = None
+        self.bus.subscribe("bind", self.bind)
+ 
+    def start(self):
+        db_path = os.path.abspath(os.path.join(os.curdir, 'my.db'))
+        self.sa_engine = create_engine('sqlite:///%s' % db_path, echo=True)
+        Base.metadata.create_all(self.sa_engine)
+ 
+    def stop(self):
+        if self.sa_engine:
+            self.sa_engine.dispose()
+            self.sa_engine = None
+ 
+    def bind(self, session):
+        session.configure(bind=self.sa_engine)
+
+# A tool to help SQLAlchemy correctly dole out and clean up db connections
+# See http://www.defuze.org/archives/222-integrating-sqlalchemy-into-a-cherrypy-application.html
+class SATool(cherrypy.Tool):
+    def __init__(self):
+        cherrypy.Tool.__init__(self, 'on_start_resource', self.bind_session, priority=20)
+        self.session = scoped_session(sessionmaker(autoflush=True, autocommit=False))
+ 
+    def _setup(self):
+        cherrypy.Tool._setup(self)
+        cherrypy.request.hooks.attach('on_end_resource', self.commit_transaction, priority=80)
+ 
+    def bind_session(self):
+        cherrypy.engine.publish('bind', self.session)
+        cherrypy.request.db = self.session
+ 
+    def commit_transaction(self):
+        cherrypy.request.db = None
+        try:
+            self.session.commit()
+        except:
+            self.session.rollback()  
+            raise
+        finally:
+            self.session.remove()
+
 
 # defines an api with a dynamic url scheme composed of /<tag>/<value>/ pairs
 # these pairs are assembled into an SQL query. Each term is combined with the AND operator.
@@ -24,12 +107,21 @@ class API:
 		return str
 	default.exposed = True
 
+
 # defines the web application that is the default client
 class Musik:
 	api = API()
 
+	@cherrypy.expose
 	def index(self):
-		return "Welcome to the Application"
-	index.exposed = True
+		media = [str(path) for path in Media.list(cherrypy.request.db)]
+		return "Media in the library: %s" % '\n'.join(media)
 
-cherrypy.quickstart(Musik())
+
+# application entry - starts the database connection and dev server
+if __name__ == '__main__':
+    SAEnginePlugin(cherrypy.engine).subscribe()
+    cherrypy.tools.db = SATool()
+    cherrypy.tree.mount(Musik(), '/', {'/': {'tools.db.on': True}})
+    cherrypy.engine.start()
+    cherrypy.engine.block()
