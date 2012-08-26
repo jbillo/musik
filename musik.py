@@ -133,13 +133,11 @@ class Musik:
 
 	@cherrypy.expose
 	def index(self):
-		#media = [str(path) for path in Media.list(cherrypy.request.db)]
-		#return "Media in the library: %s" % '\n'.join(media)
 		return templates.get_template('index.html').render()
 
 	@cherrypy.expose
 	def importmedia(self):
-		return ""
+		return templates.get_template('importmedia.html').render()
 
 
 # application entry - starts the database connection and dev server
