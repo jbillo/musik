@@ -1,51 +1,21 @@
+from musik.db import DB
+
 from multiprocessing import Process
-import os, os.path
 import re
 import time
 from threading import Lock
- 
+
 import cherrypy
 from cherrypy.process import wspbus, plugins
 
 from mako.template import Template
 from mako.lookup import TemplateLookup
 
-from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column
-from sqlalchemy.types import String, Integer
- 
-# Helper to map and register a Python class a db table
-Base = declarative_base()
 
 # Template looker-upper that handles loading and caching of mako templates
 templates = TemplateLookup(directories=['templates'], module_directory='templates/compiled')
 
-# Represents a media file on the local hard drive
-class Media(Base):
-	__tablename__ = 'media'
-	id = Column(Integer, primary_key=True)
-	path = Column(String)
-
-	def __init__(self, path):
-		Base.__init__(self)
-		self.path = path
-
-	def __str__(self):
-		return self.path.encode('utf-8')
-
-	def __unicode__(self):
-		return self.path
-
-	@staticmethod
-	def list(session):
-		return session.query(Media).all()
-
-
-#TODO: create an object to represent tags for media objects
-
- 
  # A plugin to help SQLAlchemy bind correctly to CherryPy threads
  # See http://www.defuze.org/archives/222-integrating-sqlalchemy-into-a-cherrypy-application.html
 class SAEnginePlugin(plugins.SimplePlugin):
@@ -53,17 +23,16 @@ class SAEnginePlugin(plugins.SimplePlugin):
         plugins.SimplePlugin.__init__(self, bus)
         self.sa_engine = None
         self.bus.subscribe("bind", self.bind)
- 
+
     def start(self):
-        db_path = os.path.abspath(os.path.join(os.curdir, 'musik.db'))
-        self.sa_engine = create_engine('sqlite:///%s' % db_path, echo=True)
-        Base.metadata.create_all(self.sa_engine)
- 
+    	self.db = DB()
+        self.sa_engine = self.db.getEngine()
+
     def stop(self):
         if self.sa_engine:
             self.sa_engine.dispose()
             self.sa_engine = None
- 
+
     def bind(self, session):
         session.configure(bind=self.sa_engine)
 
@@ -73,21 +42,21 @@ class SATool(cherrypy.Tool):
     def __init__(self):
         cherrypy.Tool.__init__(self, 'on_start_resource', self.bind_session, priority=20)
         self.session = scoped_session(sessionmaker(autoflush=True, autocommit=False))
- 
+
     def _setup(self):
         cherrypy.Tool._setup(self)
         cherrypy.request.hooks.attach('on_end_resource', self.commit_transaction, priority=80)
- 
+
     def bind_session(self):
         cherrypy.engine.publish('bind', self.session)
         cherrypy.request.db = self.session
- 
+
     def commit_transaction(self):
         cherrypy.request.db = None
         try:
             self.session.commit()
         except:
-            self.session.rollback()  
+            self.session.rollback()
             raise
         finally:
             self.session.remove()
@@ -106,7 +75,7 @@ class Import:
 
 	@cherrypy.expose
 	def directory(self, path):
-		
+
 		#TODO: enumerate the directory at path into a list of files
 		#TODO: for each file - if file mime type is valid, add it to database import table
 		#TODO: ensure that importmedia_process thread is started - it will process the import table
