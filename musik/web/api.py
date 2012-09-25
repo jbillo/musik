@@ -1,29 +1,39 @@
 import cherrypy
 import re
 
+from musik.db import ImportTask
+
 class Import:
 	@cherrypy.expose
 	def directory(self, path):
+		task = ImportTask(path)
+		cherrypy.request.db.add(task)
 
-		#TODO: enumerate the directory at path into a list of files
-		#TODO: for each file - if file mime type is valid, add it to database import table
-		#TODO: ensure that importmedia_process thread is started - it will process the import table
-
-		# if self.importmedia_process is None:
-		# 	self.importmedia_process = Process(target=self.processimports)
-		# 	self.importmedia_process.start()
-
-		return "Importing the directory %s" % path
+		#TODO: return JSON instead of text
+		return "Created the import task %s" % str(task)
 
 	@cherrypy.expose
 	def status(self):
-		#TODO: this method should return the status of the importer, including file currently being processed, and completion % of import job
-		# if self.importmedia_process is None or self.importmedia_process.is_alive()==False:
-			return "Nothing is being imported at this time."
-		# else:
-		# 	with self.itemLock:
-		# 		cherrypy.log(str(self.currentItem))
-		# 		return "Currently processing item %s of %s" % (self.currentItem, self.totalItems)
+		# gets the number of outstanding importer tasks
+		numtasks = cherrypy.request.db.query(ImportTask).filter(ImportTask.started == None).filter(ImportTask.completed == None).count()
+
+		# get the currently processing task
+		currentTask = cherrypy.request.db.query(ImportTask).filter(ImportTask.started != None).filter(ImportTask.completed == None).first()
+
+		ret = ""
+		if (currentTask != None):
+			ret += "The importer is currently processing %s.<br />" % str(currentTask)
+
+		#TODO: calculate estimated completion time by multiplying average job time by number of outstanding items
+
+		#TODO: return JSON instead of text
+		if numtasks == 0:
+			ret += "There are no tasks currently pending"
+		else:
+			ret += "There are %d tasks currently pending" % numtasks
+
+		return ret
+
 
 # defines an api with a dynamic url scheme composed of /<tag>/<value>/ pairs
 # these pairs are assembled into an SQL query. Each term is combined with the AND operator.
