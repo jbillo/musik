@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column
 from sqlalchemy.types import String, Integer, DateTime
+from sqlalchemy.orm import sessionmaker
 
 from datetime import datetime
 import os, os.path
@@ -60,7 +61,12 @@ class DB:
 		db_path = os.path.abspath(os.path.join(os.curdir, 'musik.db'))
 		self.sa_engine = create_engine('sqlite:///%s' % db_path, echo=True)
 		Base.metadata.create_all(self.sa_engine)
+		self.sa_sessionmaker = sessionmaker(bind=self.sa_engine)
 
 	# returns an initialized instance of sqlalchemy.engine.base.Engine
 	def getEngine(self):
 		return self.sa_engine
+
+	# returns a database session that the caller can use to execute queries and stuff
+	def getSession(self):
+		return self.sa_sessionmaker()
