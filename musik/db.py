@@ -59,7 +59,7 @@ class DB:
 	# and initializes the database if necessary.
 	def __init__(self):
 		db_path = os.path.abspath(os.path.join(os.curdir, 'musik.db'))
-		self.sa_engine = create_engine('sqlite:///%s' % db_path, echo=True)
+		self.sa_engine = create_engine('sqlite:///%s' % db_path, echo=False)
 		Base.metadata.create_all(self.sa_engine)
 		self.sa_sessionmaker = sessionmaker(bind=self.sa_engine)
 

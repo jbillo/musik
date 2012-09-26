@@ -27,6 +27,7 @@ def cleanup(signum=None, frame=None):
 
 # application entry - starts the database connection and dev server
 if __name__ == '__main__':
+	#TODO: also register for CherryPy shutdown messages
 	print "Registering for shutdown signals"
 	signal.signal(signal.SIGINT, cleanup)
 	signal.signal(signal.SIGTERM, cleanup)
