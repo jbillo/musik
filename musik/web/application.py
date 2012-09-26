@@ -70,10 +70,12 @@ class Musik:
 	def importmedia(self):
 		return templates.get_template('importmedia.html').render()
 
+
+# starts the web app. this call will block until the server goes down
 class MusikWebApplication:
-	def __init__(self):
-	    SAEnginePlugin(cherrypy.engine).subscribe()
-	    cherrypy.tools.db = SATool()
-	    cherrypy.tree.mount(Musik(), '/', {'/': {'tools.db.on': True}})
-	    cherrypy.engine.start()
-	    cherrypy.engine.block()
+    def __init__(self):
+        SAEnginePlugin(cherrypy.engine).subscribe()
+        cherrypy.tools.db = SATool()
+        cherrypy.tree.mount(Musik(), '/', {'/': {'tools.db.on': True}})
+        cherrypy.engine.start()
+        cherrypy.engine.block()
