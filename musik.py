@@ -1,6 +1,7 @@
 import musik.web.application
 import musik.library.importer
 import signal
+import sys
 
 app = None
 importThread = None
@@ -23,14 +24,15 @@ def cleanup(signum=None, frame=None):
 	app.stop()
 
 	print "Clean up complete"
+	sys.exit(0)
 
 
 # application entry - starts the database connection and dev server
 if __name__ == '__main__':
 	#TODO: also register for CherryPy shutdown messages
 	print "Registering for shutdown signals"
-	signal.signal(signal.SIGINT, cleanup)
-	signal.signal(signal.SIGTERM, cleanup)
+	for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+    signal.signal(sig, cleanup))
 
 	print "Starting worker threads"
 	importThread = musik.library.importer.ImportThread(name="ImportThread")
