@@ -1,44 +1,51 @@
 import musik.web.application
 import musik.library.importer
+from musik import initLogging
+
 import signal
 import sys
 
-app = None
-importThread = None
 
 # cleans up and safely stops the application
 def cleanup(signum=None, frame=None):
+	global log, importThread, app
+
 	if type(signum) == type(None):
 		pass
 	else:
-		print "Signal %i caught, saving and exiting..." % int(signum)
+		log.info(u'Signal %i caught, saving and exiting...', int(signum))
 
-	print "Stopping worker threads"
+	log.info(u'Stopping worker threads')
 	if importThread != None:
 		importThread.stop()
 		importThread.join(5)
 		if importThread.isAlive():
-			print "Failed to clean up importThread"
+			log.error(u'Failed to clean up importThread')
 
-	print "Stopping CherryPy Engine"
+	log.info(u'Stopping CherryPy Engine')
 	app.stop()
 
-	print "Clean up complete"
+	log.info(u'Clean up complete')
 	sys.exit(0)
 
 
 # application entry - starts the database connection and dev server
 if __name__ == '__main__':
-	#TODO: also register for CherryPy shutdown messages
-	print "Registering for shutdown signals"
-	for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
-    signal.signal(sig, cleanup))
+	global log, importThread, app
 
-	print "Starting worker threads"
-	importThread = musik.library.importer.ImportThread(name="ImportThread")
+	# get logging set up
+	log = initLogging(__name__)
+
+	# TODO: also register for CherryPy shutdown messages
+	log.info(u'Registering for shutdown signals')
+	for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+		signal.signal(sig, cleanup)
+
+	log.info(u'Starting worker threads')
+	importThread = musik.library.importer.ImportThread()
 	importThread.start()
 
 	# this is a blocking call
-	print "Starting Web App"
+	log.info(u'Starting Web App')
 	app = musik.web.application.MusikWebApplication()
 	app.start()

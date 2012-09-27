@@ -10,7 +10,7 @@ class Import:
 		cherrypy.request.db.add(task)
 
 		#TODO: return JSON instead of text
-		return "Created the import task %s" % str(task)
+		return u'Created the import task %s' % task
 
 	@cherrypy.expose
 	def status(self):
@@ -20,17 +20,17 @@ class Import:
 		# get the currently processing task
 		currentTask = cherrypy.request.db.query(ImportTask).filter(ImportTask.started != None).filter(ImportTask.completed == None).first()
 
-		ret = ""
+		ret = u''
 		if (currentTask != None):
-			ret += "The importer is currently processing %s.<br />" % str(currentTask)
+			ret += u'The importer is currently processing %s.<br />' % currentTask
 
 		#TODO: calculate estimated completion time by multiplying average job time by number of outstanding items
 
 		#TODO: return JSON instead of text
 		if numtasks == 0:
-			ret += "There are no tasks currently pending"
+			ret += u'There are no tasks currently pending'
 		else:
-			ret += "There are %d tasks currently pending" % numtasks
+			ret += u'There are %d tasks currently pending' % numtasks
 
 		return ret
 
@@ -44,20 +44,20 @@ class API:
 	@cherrypy.expose
 	def default(self, *params):
 		#TODO: pull all available tags from the database so this regex is dynamic and allows any tag
-		regex = re.compile("genre|artist|album|track")
+		regex = re.compile('genre|artist|album|track')
 
 		#TODO: instead of a string, assemble an SQL query
-		str = ""
+		str = u''
 		for index in xrange(0, len(params), 2):
 			if regex.match(params[index]):
-				str += params[index] + ": "
+				str += params[index] + u': '
 
 				if len(params) > (index + 1):
-					str += params[index + 1] + "<br />"
+					str += params[index + 1] + u'<br />'
 				else:
-			 		str += "* <br />"
+			 		str += u'* <br />'
 	 		else:
-	 			str = "Invalid Query"
+	 			str = u'Invalid Query'
 	 			break
 
 		return str

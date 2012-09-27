@@ -19,7 +19,7 @@ class SAEnginePlugin(plugins.SimplePlugin):
     def __init__(self, bus):
         plugins.SimplePlugin.__init__(self, bus)
         self.sa_engine = None
-        self.bus.subscribe("bind", self.bind)
+        self.bus.subscribe(u'bind', self.bind)
 
     def start(self):
     	self.db = DB()

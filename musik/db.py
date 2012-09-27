@@ -24,12 +24,16 @@ class ImportTask(Base):
 		self.uri = uri
 		self.created = datetime.utcnow()
 
-	def __str__(self):
-		return "Import task %s created at %s, started at %s, completed at %s" % (self.uri, str(self.created), str(self.started), str(self.completed))
+	def __unicode__(self):
+		if self.completed != None:
+			return u'<ImportTask(uri=%s, created=%s, started=%s, completed=%s)>' % (self.uri, self.created, self.started, self.completed)
+		elif self.started != None:
+			return u'<ImportTask(uri=%s, created=%s, started=%s)>' % (self.uri, self.created, self.started)
+		else:
+			return u'<ImportTask(uri=%s, created=%s)>' % (self.uri, self.created)
 
-	@staticmethod
-	def list(session):
-		return session.query(ImportTask).all()
+	def __str__(self):
+		return unicode(self).encode('utf-8')
 
 
 # Represents a media file on the local hard drive
@@ -42,12 +46,12 @@ class Media(Base):
 		Base.__init__(self)
 		self.uri = uri
 
-	def __str__(self):
-		return self.uri
+	def __unicode__(self):
+		return u'<Media(uri=%s)>' % self.uri
 
-	@staticmethod
-	def list(session):
-		return session.query(Media).all()
+	def __str__(self):
+		return unicode(self).encode('utf-8')
+
 
 # Loosely wraps the SQLAlchemy database types and access methods.
 # The goal here isn't to encapsulate SQLAlchemy. Rather, we want to

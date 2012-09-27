@@ -1,5 +1,6 @@
 import musik.db
 from musik.db import ImportTask
+from musik import initLogging
 
 from datetime import datetime
 import mimetypes
@@ -14,6 +15,14 @@ class ImportThread(threading.Thread):
 
 	# database session
 	sa_session = None
+
+	# logging instance
+	log = None
+
+	# creates a new instance of ImportThread
+	def __init__(self):
+		super(ImportThread, self).__init__(name=__name__)
+		self.log = initLogging(__name__)
 
 	def run(self):
 		try:
@@ -30,21 +39,21 @@ class ImportThread(threading.Thread):
 					# start processing it
 					task.started = datetime.utcnow()
 					self.sa_session.commit()
-					print "%s is processing task %s" % (self.getName(), str(task))
+					self.log.info(u'%s is processing task %s', self.getName(), unicode(task))
 
-					# TODO: process the task
+					# process the task
 					if os.path.isdir(task.uri):
-						print "Importing directory %s" % task.uri
+						self.log.info(u'Importing directory %s', task.uri)
 						self.importDirectory(task.uri)
 					elif os.path.isfile(task.uri):
-						print "Importing file %s" % task.uri
+						self.log.info(u'Importing file %s', task.uri)
 						self.importFile(task.uri)
 					else:
-						print "ERROR: Unrecognized URI %s" % task.uri
+						self.log.warning(u'Unrecognized URI %s', task.uri)
 
 					task.completed = datetime.utcnow()
 					self.sa_session.commit()
-					print "%s has finished processing task %s" % (self.getName(), str(task))
+					self.log.info(u'%s has finished processing task %s', self.getName(), unicode(task))
 
 				time.sleep(1)
 
@@ -81,7 +90,7 @@ class ImportThread(threading.Thread):
 						self.sa_session.add(newtask)
 						self.sa_session.commit()
 					else:
-						print "ImportThread: ignoring file %s" % newuri
+						self.log.debug(u'Ignoring file %s', newuri)
 
 
 	# returns True if the mime type of the specified uri is supported
@@ -89,7 +98,7 @@ class ImportThread(threading.Thread):
 	# TODO: query gstreamer (or whatever other backend we're using) to determine support up front
 	def isMimeTypeSupported(self, uri):
 		mtype = mimetypes.guess_type(uri)[0]
-		if mtype == "audio/mpeg" or mtype == "audio/flac" or mtype == "audio/ogg" or mtype == "audio/x-wav":
+		if mtype == u'audio/mpeg' or mtype == u'audio/flac' or mtype == u'audio/ogg' or mtype == u'audio/x-wav':
 			return True
 		else:
 			return False
@@ -98,10 +107,10 @@ class ImportThread(threading.Thread):
 	def importFile(self, uri):
 		#TODO: (global) logging needs to default to unicode. need a logging class that writes to file anyway
 		#TODO: actually import the file
-		print "importFile called with uri %s" % uri
+		self.log.info(u'ImportFile called with uri %s', uri)
 
 
 	# cleans up the thread
 	def stop(self):
-		print "%s.stop has been called" % self.getName()
+		self.log.info(u'%s.stop has been called', self.getName())
 		self.running = False

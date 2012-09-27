@@ -31,3 +31,7 @@ pip-log.txt
 
 #Mako templates compilation directory
 templates/compiled/
+
+#log files
+logs/
+*.log
