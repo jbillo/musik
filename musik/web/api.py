@@ -10,7 +10,7 @@ class Import:
 		cherrypy.request.db.add(task)
 
 		#TODO: return JSON instead of text
-		return u'Created the import task %s' % task
+		return u'Importing %s' % unicode(task.uri)
 
 	@cherrypy.expose
 	def status(self):
@@ -22,7 +22,7 @@ class Import:
 
 		ret = u''
 		if (currentTask != None):
-			ret += u'The importer is currently processing %s.<br />' % currentTask
+			ret += u'The importer is currently processing %s.<br />' % unicode(currentTask.uri)
 
 		#TODO: calculate estimated completion time by multiplying average job time by number of outstanding items
 
