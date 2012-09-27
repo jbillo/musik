@@ -77,5 +77,14 @@ class MusikWebApplication:
         SAEnginePlugin(cherrypy.engine).subscribe()
         cherrypy.tools.db = SATool()
         cherrypy.tree.mount(Musik(), '/', {'/': {'tools.db.on': True}})
+
+
+    # a blocking call that starts the web application listening for requests
+    def start(self):
         cherrypy.engine.start()
         cherrypy.engine.block()
+
+
+    # stops the web application
+    def stop(self):
+        cherrypy.engine.stop()

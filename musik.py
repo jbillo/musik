@@ -1,8 +1,8 @@
 import musik.web.application
 import musik.library.importer
 import signal
-import cherrypy
 
+app = None
 importThread = None
 
 # cleans up and safely stops the application
@@ -20,7 +20,7 @@ def cleanup(signum=None, frame=None):
 			print "Failed to clean up importThread"
 
 	print "Stopping CherryPy Engine"
-	cherrypy.engine.exit()
+	app.stop()
 
 	print "Clean up complete"
 
@@ -38,4 +38,5 @@ if __name__ == '__main__':
 
 	# this is a blocking call
 	print "Starting Web App"
-	musik.web.application.MusikWebApplication()
+	app = musik.web.application.MusikWebApplication()
+	app.start()
