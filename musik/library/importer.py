@@ -4,9 +4,12 @@ import os
 import threading
 import time
 
+from mutagen.easyid3 import EasyID3
+from mutagen.mp3 import MP3
+
 from musik import initLogging
-import musik.db
-from musik.db import ImportTask, Track
+from musik.db import DatabaseWrapper, ImportTask, Track, Album
+from musik.util import EasygoingDictionary
 
 class ImportThread(threading.Thread):
 
@@ -22,7 +25,7 @@ class ImportThread(threading.Thread):
 		"""
 		super(ImportThread, self).__init__(name=__name__)
 		self.log = initLogging(__name__)
-		db = musik.db.DatabaseWrapper()
+		db = DatabaseWrapper()
 		self.sa_session = db.get_session()
 
 	def run(self):
@@ -116,7 +119,80 @@ class ImportThread(threading.Thread):
 			self.log.info(u'Unsupported mime type %s. Ignoring file.', mtype)
 
 
-#	def readMp3MetaData(self, uri):
+	def readMp3MetaData(self, uri):
+		# get id3 data from the file
+		easyid3 = EasyID3(uri)
+
+		# copy data to a new dict that only uses the first value of each key.
+		# technically this is discarding data, but most keys are only allowed
+		# a single value anyway, and it simplifies the following algorithm
+		metadata = EasygoingDictionary()
+		for key in easyid3.keys():
+			metadata[key] = easyid3[key][0]
+
+		# TODO: handle these keys
+		#'album', 'albumartistsort', 'albumsort', 'arranger', 'asin', 'author',
+		#'barcode', 'bpm', 'compilation', 'composer', 'composersort',
+		#'conductor', 'copyright', 'date', 'discnumber', 'discsubtitle',
+		#'encodedby', 'genre', 'isrc', 'length', 'lyricist', 'media', 'mood',
+		#'musicbrainz_albumid', 'musicbrainz_albumstatus',
+		#'musicbrainz_albumtype', 'musicbrainz_artistid', 'musicbrainz_discid',
+		#'musicbrainz_trackid', 'musicbrainz_trmid', 'musicip_fingerprint',
+		#'musicip_puid', 'organization', 'performer', 'performer:*',
+		#'releasecountry', 'replaygain_*_gain', 'replaygain_*_peak', 'title',
+		#'titlesort', 'tracknumber', 'version', 'website'
+
+		track = Track(uri)
+		track.artist = self.findArtist(metadata['artist'], metadata['artistsort'], metadata['musicbrainz_artistid'])
+
+
+	def findArtist(name=None, name_sort=None, musicbrainz_id=None):
+		"""Searches the database for an existing artist that matches the specified criteria.
+		If no existing artist can be found, a new artist is created with the criteria
+		"""
+		artist = None
+		if musicbrainz_id != None:
+			# we trust musicbrainz_artistid the most because it infers that
+			# some other tagger has already verified the metadata.
+			artist = self.sa_session.query(Artist).filter(Artist.musicbrainz_artistid == musicbrainz_id).first()
+			if artist != None:
+				# found an existing artist in our db - compare its metadata
+				# to the new info. Always prefer existing metadata over new.
+				if name != None:
+					if artist.name == None:
+						artist.name = name
+					elif artist.name != name:
+						# TODO: conflict -> schedule musicbrainz task!
+						self.log.warning(u'Artist name conflict for musicbrainz_artistid %s: %s != %s', artist.musicbrainz_artistid, artist.name, name)
+				if name_sort != None:
+					if artist.name_sort == None:
+						artist.name_sort = name_sort
+					elif artist.name_sort != name_sort:
+						# TODO: conflict -> schedule musicbrainz task!
+						self.log.warning(u'Artist sort name conflict for musicbrainz_artistid %s: %s != %s', artist.musicbrainz_artistid, artist.name_sort, name_sort)
+
+		if artist == None and name != None:
+			# if we don't have musicbrainz_artistid or there is no matching
+			# artist in our db, try to find an existing artist by name
+			artist = self.sa_session.query(Artist).filter(Artist.name == name).first()
+			if artist != None:
+				# found an existing artist in our db - compare its metadata
+				# to the new info. Always prefer existing metadata over new.
+				if name_sort != None:
+					if artist.name_sort == None:
+						artist.name_sort = name_sort
+					elif artist.name_sort != name_sort:
+						self.log.warning(u'Artist sort name conflict for artist %s: %s != %s', artist.name, artist.name_sort, name_sort)
+			else:
+				# an existing artist could not be found in our db. Make a new one
+				artist = Artist(name)
+				if name_sort != None:
+					artist.name_sort = name_sort
+				if musicbrainz_id != None:
+					artist.musicbrainz_artistid = musicbrainz_id
+
+		# return the artist that we found and/or created
+		return artist
 
 
 	# cleans up the thread

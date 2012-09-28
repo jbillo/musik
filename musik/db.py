@@ -55,9 +55,7 @@ class Artist(Base):
 	name_sort = Column(String)				# sortable artist name
 	musicbrainz_artistid = Column(String)	# unique 36-digit musicbrainz hex string
 
-	# def _get_tracks(self):
- #        return object_session(self).query(Address).with_parent(self).filter(...).all()
- #    tracks = property(_get_tracks)
+	# TODO: make musicbrainz_artistid unique!
 
 	def __init__(self, name):
 		Base.__init__(self)
