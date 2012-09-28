@@ -1,7 +1,9 @@
-import cherrypy
 import re
 
+import cherrypy
+
 from musik.db import ImportTask
+
 
 class Import:
 	@cherrypy.expose

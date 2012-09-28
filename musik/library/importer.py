@@ -1,35 +1,35 @@
-import musik.db
-from musik.db import ImportTask
-from musik import initLogging
-
 from datetime import datetime
 import mimetypes
 import os
 import threading
 import time
 
+from musik import initLogging
+import musik.db
+from musik.db import ImportTask, Track
+
 class ImportThread(threading.Thread):
 
-	# whether or not the thread should continue to run
-	running = True
+	running = True		# whether or not the thread should continue to run
+	sa_session = None	# database session
+	log = None			# logging instance
 
-	# database session
-	sa_session = None
-
-	# logging instance
-	log = None
-
-	# creates a new instance of ImportThread
 	def __init__(self):
+		"""Creates a new instance of ImportThread and connects to the database.
+		This design pattern is important: since the constructor runs synchonously,
+		it ensures that two threads don't attempt to initialize the database at
+		the same time.
+		"""
 		super(ImportThread, self).__init__(name=__name__)
 		self.log = initLogging(__name__)
+		db = musik.db.DatabaseWrapper()
+		self.sa_session = db.get_session()
 
 	def run(self):
+		"""Checks for new import tasks once per second and passes them off to
+		the appropriate handler functions for completion.
+		"""
 		try:
-			# get a database connection
-			db = musik.db.DB()
-			self.sa_session = db.getSession()
-
 			# process 'till you drop
 			while self.running:
 
@@ -59,8 +59,9 @@ class ImportThread(threading.Thread):
 
 		finally:
 			# always clean up - your mom doesn't work here
-			self.sa_session.close()
-			self.sa_session = None
+			if self.sa_session != None:
+				self.sa_session.close()
+				self.sa_session = None
 
 
 	# adds a directory to the local library
@@ -105,9 +106,17 @@ class ImportThread(threading.Thread):
 
 
 	def importFile(self, uri):
-		#TODO: (global) logging needs to default to unicode. need a logging class that writes to file anyway
 		#TODO: actually import the file
 		self.log.info(u'ImportFile called with uri %s', uri)
+
+		mtype = mimetypes.guess_type(uri)[0]
+		if mtype == u'audio/mpeg':
+			pass
+		else:
+			self.log.info(u'Unsupported mime type %s. Ignoring file.', mtype)
+
+
+#	def readMp3MetaData(self, uri):
 
 
 	# cleans up the thread

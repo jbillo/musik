@@ -1,13 +1,14 @@
-from musik.db import DB
-from musik.web import api
-
 import cherrypy
 from cherrypy.process import wspbus, plugins
 
-from sqlalchemy.orm import scoped_session, sessionmaker
-
 from mako.template import Template
 from mako.lookup import TemplateLookup
+
+from sqlalchemy.orm import scoped_session, sessionmaker
+
+from musik.db import DatabaseWrapper
+from musik.web import api
+
 
 # Template looker-upper that handles loading and caching of mako templates
 templates = TemplateLookup(directories=['templates'], module_directory='templates/compiled')
@@ -22,8 +23,8 @@ class SAEnginePlugin(plugins.SimplePlugin):
         self.bus.subscribe(u'bind', self.bind)
 
     def start(self):
-    	self.db = DB()
-        self.sa_engine = self.db.getEngine()
+    	self.db = DatabaseWrapper()
+        self.sa_engine = self.db.get_engine()
 
     def stop(self):
         if self.sa_engine:

@@ -1,9 +1,9 @@
-import musik.web.application
-import musik.library.importer
-from musik import initLogging
-
 import signal
 import sys
+
+from musik import initLogging
+import musik.library.importer
+import musik.web.application
 
 
 # cleans up and safely stops the application
