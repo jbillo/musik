@@ -1,5 +1,6 @@
 import signal
 import sys
+import os
 
 from musik import initLogging
 import musik.library.importer
@@ -32,8 +33,19 @@ def cleanup(signum=None, frame=None):
 # application entry - starts the database connection and dev server
 if __name__ == '__main__':
 	global log, importThread, app
+	
+	threads = []
 
 	# get logging set up
+	# confirm that logging directory exists
+	log_dir = os.path.join(os.getcwd(), "logs") # default logging location
+	if not os.path.isdir(log_dir):
+		try:
+			os.mkdir(log_dir)
+		except IOError:
+			print u"Could not create log directory %s" % log_dir
+			sys.exit(1)
+			
 	log = initLogging(__name__)
 
 	# TODO: also register for CherryPy shutdown messages
@@ -44,8 +56,9 @@ if __name__ == '__main__':
 	log.info(u'Starting worker threads')
 	importThread = musik.library.importer.ImportThread()
 	importThread.start()
+	threads.append(importThread)
 
 	# this is a blocking call
 	log.info(u'Starting Web App')
-	app = musik.web.application.MusikWebApplication()
+	app = musik.web.application.MusikWebApplication(log=log, threads=threads)
 	app.start()

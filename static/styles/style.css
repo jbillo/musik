@@ -1,0 +1,32 @@
+body {
+	font-family: Arial, sans-serif;
+}
+
+form.importfolder fieldset {
+	margin-bottom: 10px;
+	width: 600px;
+}
+form.importfolder legend {
+	padding: 0 2px;
+	font-weight: bold;
+}
+form.importfolder label {
+	display: inline-block;
+	line-height: 1.8;
+	vertical-align: top;
+	width: 100px; /* width of labels */
+}
+form.importfolder fieldset ol {
+	margin: 0;
+	padding: 0;
+}
+form.importfolder fieldset li {
+	list-style: none;
+	padding: 5px;
+	margin: 0;
+}
+form.importfolder em {
+	font-weight: bold;
+	font-style: normal;
+	color: #f00;
+}
