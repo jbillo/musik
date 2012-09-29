@@ -85,8 +85,8 @@ class MusikWebApplication:
 
         # Subscribe specifically to the 'stop' method passed by cherrypy.
         # This lets us cleanly stop all threads executed by the application.
+        SAEnginePlugin(cherrypy.engine).subscribe()
         cherrypy.engine.subscribe("stop", self.stop_threads)
-        
         cherrypy.tools.db = SATool()
         
         config = {'/':
