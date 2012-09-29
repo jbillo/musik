@@ -35,3 +35,6 @@ templates/compiled/
 #log files
 logs/
 *.log
+
+#Temporary gedit files
+.*~

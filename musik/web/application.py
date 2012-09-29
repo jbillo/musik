@@ -1,3 +1,6 @@
+import sys
+import os
+
 import cherrypy
 from cherrypy.process import wspbus, plugins
 
@@ -77,7 +80,19 @@ class MusikWebApplication:
     def __init__(self):
         SAEnginePlugin(cherrypy.engine).subscribe()
         cherrypy.tools.db = SATool()
-        cherrypy.tree.mount(Musik(), '/', {'/': {'tools.db.on': True}})
+        
+        config = {'/':
+			{
+				'tools.db.on': True,
+				'tools.staticdir.root': os.path.dirname(os.path.realpath(sys.argv[0])),
+			},
+			'/static':
+			{
+				'tools.staticdir.on': True,
+				'tools.staticdir.dir': "static",
+			},
+		}
+        cherrypy.tree.mount(Musik(), '/', config=config)
 
 
     # a blocking call that starts the web application listening for requests
@@ -88,4 +103,6 @@ class MusikWebApplication:
 
     # stops the web application
     def stop(self):
+    	self.log.info(u"Trying to stop web application")
+    	importThread.stop()
         cherrypy.engine.stop()
