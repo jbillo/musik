@@ -77,8 +77,16 @@ class Musik:
 
 # starts the web app. this call will block until the server goes down
 class MusikWebApplication:
-    def __init__(self):
-        SAEnginePlugin(cherrypy.engine).subscribe()
+    log = threads = None
+    
+    def __init__(self, log, threads):
+        self.log = log
+        self.threads = threads
+
+        # Subscribe specifically to the 'stop' method passed by cherrypy.
+        # This lets us cleanly stop all threads executed by the application.
+        cherrypy.engine.subscribe("stop", self.stop_threads)
+        
         cherrypy.tools.db = SATool()
         
         config = {'/':
@@ -100,9 +108,14 @@ class MusikWebApplication:
         cherrypy.engine.start()
         cherrypy.engine.block()
 
-
     # stops the web application
     def stop(self):
-    	self.log.info(u"Trying to stop web application")
-    	importThread.stop()
+    	self.log.info(u"Trying to stop main web application")
         cherrypy.engine.stop()
+
+    # stop all threads before closing out this thread
+    def stop_threads(self):
+        self.log.info(u"Trying to stop all threads")
+        for thread in self.threads:
+            if thread.is_alive():
+                thread.stop()

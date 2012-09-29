@@ -33,6 +33,8 @@ def cleanup(signum=None, frame=None):
 # application entry - starts the database connection and dev server
 if __name__ == '__main__':
 	global log, importThread, app
+	
+	threads = []
 
 	# get logging set up
 	# confirm that logging directory exists
@@ -54,8 +56,9 @@ if __name__ == '__main__':
 	log.info(u'Starting worker threads')
 	importThread = musik.library.importer.ImportThread()
 	importThread.start()
+	threads.append(importThread)
 
 	# this is a blocking call
 	log.info(u'Starting Web App')
-	app = musik.web.application.MusikWebApplication()
+	app = musik.web.application.MusikWebApplication(log=log, threads=threads)
 	app.start()

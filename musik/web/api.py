@@ -1,4 +1,5 @@
 import re
+import os
 
 import cherrypy
 
@@ -8,6 +9,9 @@ from musik.db import ImportTask
 class Import:
 	@cherrypy.expose
 	def directory(self, path):
+		if not path or not os.path.isdir(path):
+			raise IOError(u"Path '%s' not found on filesystem" % path)
+	
 		task = ImportTask(path)
 		cherrypy.request.db.add(task)
 
