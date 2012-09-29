@@ -37,4 +37,4 @@ logs/
 *.log
 
 #Temporary gedit files
-.*~
+*.*~
