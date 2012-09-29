@@ -120,6 +120,8 @@ class ImportThread(threading.Thread):
 
 
 	def readMp3MetaData(self, uri):
+		# TODO: check that the uri doesn't already exist
+
 		# get id3 data from the file
 		easyid3 = EasyID3(uri)
 
@@ -131,19 +133,25 @@ class ImportThread(threading.Thread):
 			metadata[key] = easyid3[key][0]
 
 		# TODO: handle these keys
-		#'album', 'albumartistsort', 'albumsort', 'arranger', 'asin', 'author',
-		#'barcode', 'bpm', 'compilation', 'composer', 'composersort',
-		#'conductor', 'copyright', 'date', 'discnumber', 'discsubtitle',
-		#'encodedby', 'genre', 'isrc', 'length', 'lyricist', 'media', 'mood',
-		#'musicbrainz_albumid', 'musicbrainz_albumstatus',
-		#'musicbrainz_albumtype', 'musicbrainz_artistid', 'musicbrainz_discid',
-		#'musicbrainz_trackid', 'musicbrainz_trmid', 'musicip_fingerprint',
-		#'musicip_puid', 'organization', 'performer', 'performer:*',
-		#'releasecountry', 'replaygain_*_gain', 'replaygain_*_peak', 'title',
-		#'titlesort', 'tracknumber', 'version', 'website'
+		# 'asin', 'author', 'bpm', 'copyright', 'date',
+		# 'encodedby', 'genre', 'isrc', 'length', 'mood',
+		# 'musicbrainz_trackid', 'musicbrainz_trmid',
+		# 'musicip_fingerprint', 'musicip_puid', 'performer:*',
+		# 'replaygain_*_gain', 'replaygain_*_peak', 'title', 'titlesort',
+		# 'tracknumber', 'version', 'website'
 
 		track = Track(uri)
 		track.artist = self.findArtist(metadata['artist'], metadata['artistsort'], metadata['musicbrainz_artistid'])
+		track.album_artist = self.findArtist(metadata['albumartistsort'], metadata['albumartistsort'])
+		track.arranger = self.findArtist(metadata['arranger'])
+		track.composer = self.findArtist(metadata['composer'], metadata['composersort'])
+		track.conductor = self.findArtist(metadata['conductor'])
+		track.lyricist = self.findArtist(metadata['lyricist'])
+		track.performer = self.findArtist(metadata['performer'])
+
+		track.album = self.findAlbum(metadata['album'], metadata['albumsort'], metadata['musicbrainz_albumid'], metadata)
+		if track.album != None:
+			disc = self.findDisc(track.album, metadata['discnumber'], metadata['discsubtitle'], metadata['musicbrainz_discid'])
 
 
 	def findArtist(name=None, name_sort=None, musicbrainz_id=None):
@@ -195,7 +203,176 @@ class ImportThread(threading.Thread):
 		return artist
 
 
-	# cleans up the thread
+	def findAlbum(title=None, title_sort=None, musicbrainz_id=None, artist=None, metadata=None):
+		"""Searches the database for an existing album that matches the specified criteria.
+		If no existing album can be found, a new album is created with the criteria.
+		"""
+		album = None
+		if musicbrainz_id != None:
+			# we trust musicbrainz_albumid the most because it infers that
+			# some other tagger has already verified the metadata.
+			album = self.sa_session.query(Album).filter(Album.musicbrainz_albumid == musicbrainz_id).first()
+			if album != None:
+				# found an existing album in our db - compare its metadata
+				# to the new info. Always prefer existing metadata over new.
+				if title != None:
+					if album.title == None:
+						album.title = title
+					elif album.title != title:
+						# TODO: conflict -> schedule musicbrainz task!
+						self.log.warning(u'Album title conflict for musicbrainz_albumid %s: %s != %s', album.musicbrainz_albumid, album.title, title)
+				if title_sort != None:
+					if album.title_sort == None:
+						album.title_sort = title_sort
+					elif album.title_sort != title_sort:
+						# TODO: conflict -> schedule musicbrainz task!
+						self.log.warning(u'Album sort title conflict for musicbrainz_albumid %s: %s != %s', album.musicbrainz_albumid, album.title_sort, title_sort)
+				if artist != None:
+					if album.artist == None:
+						album.artist = artist
+					elif album.artist.id != artist.id:
+						# TODO: conflict -> schedule musicbrainz task!
+						self.log.warning(u'Album artist conflict for musicbrainz_albumid %s: %s != %s', album.musicbrainz_albumid, album.artist, artist)
+
+		if album == None and title != None and artist != None:
+			# if we don't have musicbrainz_albumid or there is no matching
+			# album in our db, try to find an existing album by title and artist
+			album = self.sa_session.query(Album).filter(Album.title == title, Album.artist.id == artist.id).first()
+			if album != None:
+				# found an existing album in our db - compare its metadata
+				# to the new info. Always prefer existing metadata over new.
+				if title_sort != None:
+					if album.title_sort == None:
+						album.title_sort = title_sort
+					elif album.title_sort != title_sort:
+						self.log.warning(u'Album sort title conflict for album %s: %s != %s', album.title, album.title_sort, title_sort)
+			else:
+				# an existing album could not be found in our db. Make a new one
+				album = Album(title)
+				if title_sort != None:
+					album.title_sort = title_sort
+				if musicbrainz_id != None:
+					album.musicbrainz_albumid = musicbrainz_id
+				if artist != None:
+					album.artist = artist
+
+		# we either found or created the album. now verify its metadata
+		if album != None and metadata != None:
+			if metadata['barcode'] != None:
+				if album.barcode == None:
+					album.barcode = metadata['barcode']
+				elif album.barcode != metadata['barcode']:
+					# TODO: conflict -> schedule musicbrainz task!
+					self.log.warning(u'Album barcode conflict for album %s: %s != %s', album, album.barcode, metadata['barcode'])
+			if metadata['compilation'] != None:
+				if album.compilation == None:
+					album.compilation = metadata['compilation']
+				elif album.compilation != metadata['compilation']:
+					# TODO: conflict -> schedule musicbrainz task!
+					self.log.warning(u'Album compilation conflict for album %s: %s != %s', album, album.compilation, metadata['compilation'])
+			if metadata['media'] != None:
+				if album.media_type == None:
+					album.media_type = metadata['media']
+				if album.media_type != metadata['media']:
+					# TODO: conflict -> schedule musicbrainz task!
+					self.log.warning(u'Album media type conflict for album %s: %s != %s', album, album.media_type, metadata['media'])
+			if metadata['musicbrainz_albumstatus'] != None:
+				if album.musicbrainz_albumstatus == None:
+					album.musicbrainz_albumstatus = metadata['musicbrainz_albumstatus']
+				elif album.musicbrainz_albumstatus != metadata['musicbrainz_albumstatus']:
+					# TODO: conflict -> schedule musicbrainz task!
+					self.log.warning(u'Album musicbrainz_albumstatus conflict for album %s: %s != %s', album, album.musicbrainz_albumstatus, metadata['musicbrainz_albumstatus'])
+			if metadata['musicbrainz_albumtype'] != None:
+				if album.musicbrainz_albumtype == None:
+					album.musicbrainz_albumtype = metadata['musicbrainz_albumtype']
+				elif album.musicbrainz_albumtype != metadata['musicbrainz_albumtype']:
+					# TODO: conflict -> schedule musicbrainz task!
+					self.log.warning(u'Album musicbrainz_albumtype conflict for album %s: %s != %s', album, album.musicbrainz_albumtype, metadata['musicbrainz_albumtype'])
+			if metadata['organization'] != None:
+				if album.organization == None:
+					album.organization = metadata['organization']
+				elif album.organization != metadata['organization']:
+					# TODO: conflict -> schedule musicbrainz task!
+					self.log.warning(u'Album organization conflict for album %s: %s != %s', album, album.organization, metadata['organization'])
+			if metadata['releasecountry'] != None:
+				if album.releasecountry == None:
+					album.releasecountry = metadata['releasecountry']
+				elif album.releasecountry != metadata['releasecountry']:
+					# TODO: conflict -> schedule musicbrainz task!
+					self.log.warning(u'Album release country conflict for album %s: %s != %s', album, album.releasecountry, metadata['releasecountry'])
+
+		return album
+
+
+	def findDisc(album=None, discnumber=None, discsubtitle=None, musicbrainz_id=None):
+		"""Tries to find an existing disc that matches the specified criteria.
+		If an existing disc cannot be found, creates a new disc with the specified criteria.
+		"""
+		# TODO: first, see if there's a disc that's already linked that satisfies the specified criteria
+		# if album != None:
+		# 	for disc in album.discs:
+		# 		if musicbrainz_id != None:
+		# 			if disc.musicbrainz_id == musicbrainz_id:
+		# 				if discnumber != None:
+		# 					if disc.discnumber == None:
+		# 						disc.discnumber = discnumber
+		# 					elif
+
+		disc = None
+		if musicbrainz_id != None:
+			# we trust musicbrainz_discid the most because it infers that
+			# some other tagger has already verified the metadata.
+			disc = self.sa_session.query(Disc).filter(Disc.musicbrainz_discid == musicbrainz_id).first()
+			if disc != None:
+				if album != None:
+					if disc.album == None:
+						disc.album = album
+					elif disc.album.id != album.id:
+						# TODO: conflict -> schedule musicbrainz task!
+						self.log.warning(u'Disc album conflict for disc %s: %s != %s', disc, disc.album, album)
+				if discnumber != None:
+					if disc.discnumber == None:
+						disc.discnumber = discnumber
+					elif disc.discnumber != discnumber:
+						# TODO: conflict -> schedule musicbrainz task!
+						self.log.warning(u'Disc number conflict for disc %s: %s != %s', disc, disc.discnumber, discnumber)
+				if discsubtitle != None:
+					if disc.discsubtitle == None:
+						disc.discsubtitle = discsubtitle
+					elif disc.discsubtitle != discsubtitle:
+						# TODO: conflict -> schedule musicbrainz task!
+						self.log.warning(u'Disc subtitle conflict for disc %s: %s != %s', disc, disc.discsubtitle, discsubtitle)
+		if album != None and discnumber != None:
+			# musicbrainz_discid wasn't supplied or didn't yield an existing album.
+			# try to search with album id and disc number instead.
+			disc = self.sa_session.query(Disc).filter(Disc.album_id == album.id, Disc.discnumber == discnumber)
+			if disc != None:
+				if discsubtitle != None:
+					if disc.discsubtitle == None:
+						disc.discsubtitle = discsubtitle
+					elif disc.discsubtitle != discsubtitle:
+						# TODO: conflict -> schedule musicbrainz task!
+						self.log.warning(u'Disc subtitle conflict for disc %s: %s != %s', disc, disc.discsubtitle, discsubtitle)
+				if musicbrainz_id != None:
+					if disc.musicbrainz_discid == None:
+						disc.musicbrainz_discid = musicbrainz_id
+					elif disc.musicbrainz_discid != musicbrainz_id:
+						# TODO: conflict -> schedule musicbrainz task!
+						self.log.warning(u'Disc musicbrainz_discid conflict for disc %s: %s != %s', disc, disc.musicbrainz_discid, musicbrainz_id)
+			else:
+				# could not find the disc in question. Create a new one instead
+				disc = Disc(discnumber)
+				if album != None:
+					disc.album = album
+				if discsubtitle != None:
+					disc.discsubtitle = discsubtitle
+				if musicbrainz_id != None:
+					disc.musicbrainz_discid = musicbrainz_id
+
+		return disc
+
+
 	def stop(self):
+		"""Cleans up the thread"""
 		self.log.info(u'%s.stop has been called', self.getName())
 		self.running = False
