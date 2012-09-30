@@ -147,6 +147,8 @@ class ImportThread(threading.Thread):
 		# 'tracknumber', 'version', 'website'
 
 		track = Track(uri)
+
+		# artists
 		track.artist = self.findArtist(metadata['artist'], metadata['artistsort'], metadata['musicbrainz_artistid'])
 		track.album_artist = self.findArtist(metadata['albumartist'], metadata['albumartistsort'])
 		track.arranger = self.findArtist(metadata['arranger'])
@@ -155,10 +157,18 @@ class ImportThread(threading.Thread):
 		track.lyricist = self.findArtist(metadata['lyricist'])
 		track.performer = self.findArtist(metadata['performer'])
 
+		# album and disc
 		track.album = self.findAlbum(metadata['album'], metadata['albumsort'], metadata['musicbrainz_albumid'], track.artist, metadata)
 		if track.album != None:
 			disc = self.findDisc(track.album, metadata['discnumber'], metadata['discsubtitle'], metadata['musicbrainz_discid'])
+			for d in track.album.discs:
+				if d.id == disc.id:
+					# found disc is already linked - don't add it again
+					disc = None
+			if disc != None:
+				track.album.discs.add(disc)
 
+		# other track attributes
 		track.title = metadata['title']
 
 		return track
@@ -327,18 +337,43 @@ class ImportThread(threading.Thread):
 		"""Tries to find an existing disc that matches the specified criteria.
 		If an existing disc cannot be found, creates a new disc with the specified criteria.
 		"""
-		# TODO: first, see if there's a disc that's already linked that satisfies the specified criteria
-		# if album != None:
-		# 	for disc in album.discs:
-		# 		if musicbrainz_id != None:
-		# 			if disc.musicbrainz_id == musicbrainz_id:
-		# 				if discnumber != None:
-		# 					if disc.discnumber == None:
-		# 						disc.discnumber = discnumber
-		# 					elif
-
+		# first see if there's a disc that's already linked to the album that
+		# has either the specified musicbrainz_discid or discnumber.
 		disc = None
-		if musicbrainz_id != None:
+		if album != None:
+			for d in album.discs:
+				if musicbrainz_id != None:
+					if d.musicbrainz_id == musicbrainz_id:
+						disc = d
+				if discnumber != None:
+					if d.discnumber == discnumber:
+						disc = d
+
+		# if we found a disc in the existing album's collection that matches
+		# the specified criteria, update any missing metadata
+		if disc != None:
+			self.log.debug(u'Disc musicbrainz_discid/discnumber search found existing disc %s in database' % disc)
+			if discnumber != None:
+				if d.discnumber == None:
+					d.discnumber = discnumber
+				elif d.discnumber != discnumber:
+					# TODO: conflict!
+					self.log.warning(u'Disc number conflict for disc %s: %s != %s', disc, disc.discnumber, discnumber)
+			if discsubtitle != None:
+				if d.subtitle == None:
+					d.subtitle = discsubtitle
+				elif d.subtitle != discsubtitle:
+					# TODO: Conflict!
+					self.log.warning(u'Disc subtitle conflict for disc %s: %s != %s', disc, disc.subtitle, discsubtitle)
+			if musicbrainz_id != None:
+				if d.musicbrainz_discid == None:
+					d.musicbrainz_discid = musicbrainz_id
+				elif d.musicbrainz_discid != musicbrainz_id:
+					# TODO: conflict!
+					self.log.warning(u'Disc musicbrainz_discid conflict for disc %s: %s != %s', disc, disc.musicbrainz_discid, musicbrainz_id)
+
+		if disc == None and musicbrainz_id != None:
+			# search for an existing unlinked disc in the database.
 			# we trust musicbrainz_discid the most because it infers that
 			# some other tagger has already verified the metadata.
 			disc = self.sa_session.query(Disc).filter(Disc.musicbrainz_discid == musicbrainz_id).first()
@@ -362,7 +397,8 @@ class ImportThread(threading.Thread):
 					elif disc.discsubtitle != discsubtitle:
 						# TODO: conflict -> schedule musicbrainz task!
 						self.log.warning(u'Disc subtitle conflict for disc %s: %s != %s', disc, disc.discsubtitle, discsubtitle)
-		if album != None and discnumber != None:
+
+		if disc == None and album != None and discnumber != None:
 			# musicbrainz_discid wasn't supplied or didn't yield an existing album.
 			# try to search with album id and disc number instead.
 			disc = self.sa_session.query(Disc).filter(Disc.album_id == album.id, Disc.discnumber == discnumber)
