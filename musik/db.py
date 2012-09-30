@@ -80,6 +80,7 @@ class Album(Base):
 	id = Column(Integer, primary_key=True)	# unique id
 	title = Column(String)					# the title of the album
 	title_sort = Column(String)				# sortable title of the album
+	asin = Column(String)					# amazon standard identification number - only if physical
 	barcode = Column(String)				# physical album barcode
 	compilation = Column(Boolean)			# whether or not this album is a compilation
 	media_type = Column(String)				# the type of media (CD, etc)
@@ -149,6 +150,7 @@ class Track(Base):
 	album_id = Column(Integer, ForeignKey('albums.id'))			# the album that contains the track
 	album_artist_id = Column(Integer, ForeignKey('artists.id'))	# the artist that released the album
 	arranger_id = Column(Integer, ForeignKey('artists.id'))		# the artist that arranged the track
+	author_id = Column(Integer, ForeignKey('artists.id'))		# the author that wrote the track
 	bpm = Column(Integer)										# beats per minute
 	composer_id = Column(Integer, ForeignKey('artists.id'))		# the artist that composed the track
 	conductor_id = Column(Integer, ForeignKey('artists.id'))	# the artist that conducted the track
@@ -181,6 +183,7 @@ class Track(Base):
 	conductor = relationship('Artist', primaryjoin='Artist.id == Track.conductor_id')
 	lyricist = relationship('Artist', primaryjoin='Artist.id == Track.lyricist_id')
 	performer = relationship('Artist', primaryjoin='Artist.id == Track.performer_id')
+	author = relationship('Artist', primaryjoin='Artist.id == Track.author_id')
 	album = relationship('Album', backref=backref('tracks', order_by=tracknumber))
 	disc = relationship('Disc', backref=backref('tracks', order_by=tracknumber))
 

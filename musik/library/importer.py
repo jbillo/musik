@@ -7,6 +7,8 @@ import time
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 
+from sqlalchemy.exc import OperationalError
+
 from musik import initLogging
 from musik.db import DatabaseWrapper, ImportTask, Track, Album, Artist
 from musik.util import EasygoingDictionary
@@ -144,7 +146,7 @@ class ImportThread(threading.Thread):
 			metadata[key] = easyid3[key][0]
 
 		# TODO: handle these keys
-		# 'asin', bpm', 'copyright', 'date',
+		# 'bpm', 'copyright', 'date',
 		# 'encodedby', 'genre', 'isrc', 'length', 'mood',
 		# 'musicbrainz_trackid', 'musicbrainz_trmid',
 		# 'musicip_fingerprint', 'musicip_puid', 'performer:*',
@@ -177,6 +179,15 @@ class ImportThread(threading.Thread):
 			elif track.arranger.id != arranger.id:
 				# TODO: conflict!
 				self.log.warning(u'Arranger conflict for track %s: %s != %s', track, track.arranger, arranger)
+
+		# author
+		author = self.findArtist(metadata['author'])
+		if author != None:
+			if track.author == None:
+				track.author = author
+			elif track.author.id != author.id:
+				# TODO: conflict!
+				self.log.warning(u'Author conflict for track %s: %s != %s', track, track.author, author)
 
 		# composer
 		composer = self.findArtist(metadata['composer'], metadata['composersort'])
@@ -352,6 +363,12 @@ class ImportThread(threading.Thread):
 
 		# we either found or created the album. now verify its metadata
 		if album != None and metadata != None:
+			if metadata['asin'] != None:
+				if album.asin == None:
+					album.asin = metadata['asin']
+				elif album.asin != metadata['asin']:
+					# TODO: conflict -> schedule musicbrainz task!
+					self.log.warning(u'Album ASIN conflict for album %s: %s != %s', album, album.asin, metadata['asin'])
 			if metadata['barcode'] != None:
 				if album.barcode == None:
 					album.barcode = metadata['barcode']
