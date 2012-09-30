@@ -128,7 +128,7 @@ class ImportThread(threading.Thread):
 
 
 	def readMp3MetaData(self, uri):
-		# TODO: check that the uri doesn't already exist
+		# TODO: check that the uri doesn't already exist in our library
 		track = self.sa_session.query(Track).filter(Track.uri == uri).first()
 		if track == None:
 			track = Track(uri)
@@ -144,14 +144,6 @@ class ImportThread(threading.Thread):
 		metadata = EasygoingDictionary()
 		for key in easyid3.keys():
 			metadata[key] = easyid3[key][0]
-
-		# TODO: handle these keys
-		# 'bpm', 'copyright', 'date',
-		# 'encodedby', 'genre', 'isrc', 'length', 'mood',
-		# 'musicbrainz_trackid', 'musicbrainz_trmid',
-		# 'musicip_fingerprint', 'musicip_puid', 'performer:*',
-		# 'replaygain_*_gain', 'replaygain_*_peak', 'titlesort',
-		# 'tracknumber', 'version', 'website'
 
 		# artist
 		artist = self.findArtist(metadata['artist'], metadata['artistsort'], metadata['musicbrainz_artistid'])
@@ -244,8 +236,141 @@ class ImportThread(threading.Thread):
 			if disc != None:
 				track.album.discs.add(disc)
 
-		# other track attributes
-		track.title = metadata['title']
+		#bpm
+		if metadata['bpm'] != None:
+			if track.bpm == None:
+				track.bpm = metadata['bpm']
+			elif track.bpm != metadata['bpm']:
+				# TODO: conflict!
+				self.log.warning(u'Track bpm conflict for track %s: %s != %s', track, track.bpm, metadata['bpm'])
+
+		#copyright
+		if metadata['copyright'] != None:
+			if track.copyright == None:
+				track.copyright = metadata['copyright']
+			elif track.copyright != metadata['copyright']:
+				# TODO: conflict!
+				self.log.warning(u'Track copyright conflict for track %s: %s != %s', track, track.copyright, metadata['copyright'])
+
+		#date
+		if metadata['date'] != None:
+			if track.date == None:
+				track.date = metadata['date']
+			elif track.date != metadata['date']:
+				# TODO: conflict!
+				self.log.warning(u'Track date conflict for track %s: %s != %s', track, track.date, metadata['date'])
+
+		#encodedby
+		if metadata['encodedby'] != None:
+			if track.encodedby == None:
+				track.encodedby = metadata['encodedby']
+			elif track.encodedby != metadata['encodedby']:
+				# TODO: conflict!
+				self.log.warning(u'Track encodedby conflict for track %s: %s != %s', track, track.encodedby, metadata['encodedby'])
+
+		#genre
+		if metadata['genre'] != None:
+			if track.genre == None:
+				track.genre = metadata['genre']
+			elif track.genre != metadata['genre']:
+				# TODO: conflict!
+				self.log.warning(u'Track genre conflict for track %s: %s != %s', track, track.genre, metadata['genre'])
+
+		#isrc
+		if metadata['isrc'] != None:
+			if track.isrc == None:
+				track.isrc = metadata['isrc']
+			elif track.isrc != metadata['isrc']:
+				# TODO: conflict!
+				self.log.warning(u'Track isrc conflict for track %s: %s != %s', track, track.isrc, metadata['isrc'])
+
+		#length
+		if metadata['length'] != None:
+			if track.length == None:
+				track.length = metadata['length']
+			elif track.length != metadata['length']:
+				# TODO: conflict!
+				self.log.warning(u'Track length conflict for track %s: %s != %s', track, track.length, metadata['length'])
+
+		#mood
+		if metadata['mood'] != None:
+			if track.mood == None:
+				track.mood = metadata['mood']
+			elif track.mood != metadata['mood']:
+				# TODO: conflict!
+				self.log.warning(u'Track mood conflict for track %s: %s != %s', track, track.mood, metadata['mood'])
+
+		#musicbrainz_trackid
+		if metadata['musicbrainz_trackid'] != None:
+			if track.musicbrainz_trackid == None:
+				track.musicbrainz_trackid = metadata['musicbrainz_trackid']
+			elif track.musicbrainz_trackid != metadata['musicbrainz_trackid']:
+				# TODO: conflict!
+				self.log.warning(u'Track musicbrainz_trackid conflict for track %s: %s != %s', track, track.musicbrainz_trackid, metadata['musicbrainz_trackid'])
+
+		#musicbrainz_trmid
+		if metadata['musicbrainz_trmid'] != None:
+			if track.musicbrainz_trmid == None:
+				track.musicbrainz_trmid = metadata['musicbrainz_trmid']
+			elif track.musicbrainz_trmid != metadata['musicbrainz_trmid']:
+				# TODO: conflict!
+				self.log.warning(u'Track musicbrainz_trmid conflict for track %s: %s != %s', track, track.musicbrainz_trmid, metadata['musicbrainz_trmid'])
+
+		#musicip_fingerprint
+		if metadata['musicip_fingerprint'] != None:
+			if track.musicip_fingerprint == None:
+				track.musicip_fingerprint = metadata['musicip_fingerprint']
+			elif track.musicip_fingerprint != metadata['musicip_fingerprint']:
+				# TODO: conflict!
+				self.log.warning(u'Track musicip_fingerprint conflict for track %s: %s != %s', track, track.musicip_fingerprint, metadata['musicip_fingerprint'])
+
+		#musicip_puid
+		if metadata['musicip_puid'] != None:
+			if track.musicip_puid == None:
+				track.musicip_puid = metadata['musicip_puid']
+			elif track.musicip_puid != metadata['musicip_puid']:
+				# TODO: conflict!
+				self.log.warning(u'Track musicip_puid conflict for track %s: %s != %s', track, track.musicip_puid, metadata['musicip_puid'])
+
+		# title
+		if metadata['title'] != None:
+			if track.title == None:
+				track.title = metadata['title']
+			elif track.title != metadata['title']:
+				# TODO: conflict!
+				self.log.warning(u'Track title conflict for track %s: %s != %s', track, track.title, metadata['title'])
+
+		# titlesort
+		if metadata['titlesort'] != None:
+			if track.title_sort == None:
+				track.title_sort = metadata['titlesort']
+			elif track.title_sort != metadata['titlesort']:
+				# TODO: conflict!
+				self.log.warning(u'Track titlesort conflict for track %s: %s != %s', track, track.title_sort, metadata['titlesort'])
+
+		# tracknumber
+		if metadata['tracknumber'] != None:
+			if track.tracknumber == None:
+				track.tracknumber = metadata['tracknumber']
+			elif track.tracknumber != metadata['tracknumber']:
+				# TODO: conflict!
+				self.log.warning(u'Track tracknumber conflict for track %s: %s != %s', track, track.tracknumber, metadata['tracknumber'])
+
+		# version
+		if metadata['version'] != None:
+			if track.subtitle == None:
+				track.subtitle = metadata['version']
+			elif track.subtitle != metadata['version']:
+				# TODO: conflict!
+				self.log.warning(u'Track version conflict for track %s: %s != %s', track, track.subtitle, metadata['version'])
+
+		# website
+		if metadata['website'] != None:
+			if track.website == None:
+				track.website = metadata['website']
+			elif track.website != metadata['website']:
+				# TODO: conflict!
+				self.log.warning(u'Track website conflict for track %s: %s != %s', track, track.website, metadata['website'])
 
 		return track
 

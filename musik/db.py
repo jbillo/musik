@@ -172,6 +172,7 @@ class Track(Base):
 	title_sort = Column(String)									# sortable title of the track
 	tracknumber = Column(Integer)								# order of the track on the disc
 	subtitle = Column(String)									# sub title of the track
+	website = Column(String)									# a website for the track
 	playcount = Column(Integer)									# number of times the track was played
 	rating = Column(Integer)									# rating of the track (0-255)
 
