@@ -8,7 +8,7 @@ from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 
 from musik import initLogging
-from musik.db import DatabaseWrapper, ImportTask, Track, Album
+from musik.db import DatabaseWrapper, ImportTask, Track, Album, Artist
 from musik.util import EasygoingDictionary
 
 class ImportThread(threading.Thread):
@@ -37,7 +37,12 @@ class ImportThread(threading.Thread):
 			while self.running:
 
 				# find the first unprocessed import task
-				task = self.sa_session.query(ImportTask).filter(ImportTask.started == None).order_by(ImportTask.created).first()
+				try:
+					task = self.sa_session.query(ImportTask).filter(ImportTask.started == None).order_by(ImportTask.created).first()
+				except OperationalError as ex:
+					# Ran into this when my SQLite database was locked. 
+					self.log.error(u'Operational error accessing database. Ensure it is not open by another process.')
+					break
 				if task != None:
 					# start processing it
 					task.started = datetime.utcnow()
@@ -113,10 +118,11 @@ class ImportThread(threading.Thread):
 		self.log.info(u'ImportFile called with uri %s', uri)
 
 		mtype = mimetypes.guess_type(uri)[0]
-		if mtype == u'audio/mpeg':
-			pass
-		else:
+		if mtype != u'audio/mpeg':
 			self.log.info(u'Unsupported mime type %s. Ignoring file.', mtype)
+
+		# Try to read the metadata appropriately.
+		metadata = self.readMp3MetaData(uri)
 
 
 	def readMp3MetaData(self, uri):
@@ -142,19 +148,22 @@ class ImportThread(threading.Thread):
 
 		track = Track(uri)
 		track.artist = self.findArtist(metadata['artist'], metadata['artistsort'], metadata['musicbrainz_artistid'])
-		track.album_artist = self.findArtist(metadata['albumartistsort'], metadata['albumartistsort'])
+		track.album_artist = self.findArtist(metadata['albumartist'], metadata['albumartistsort'])
 		track.arranger = self.findArtist(metadata['arranger'])
 		track.composer = self.findArtist(metadata['composer'], metadata['composersort'])
 		track.conductor = self.findArtist(metadata['conductor'])
 		track.lyricist = self.findArtist(metadata['lyricist'])
 		track.performer = self.findArtist(metadata['performer'])
+		track.title = metadata['title']
 
-		track.album = self.findAlbum(metadata['album'], metadata['albumsort'], metadata['musicbrainz_albumid'], metadata)
+		track.album = self.findAlbum(metadata['album'], metadata['albumsort'], metadata['musicbrainz_albumid'])
 		if track.album != None:
 			disc = self.findDisc(track.album, metadata['discnumber'], metadata['discsubtitle'], metadata['musicbrainz_discid'])
+			
+		return track
 
 
-	def findArtist(name=None, name_sort=None, musicbrainz_id=None):
+	def findArtist(self, name=None, name_sort=None, musicbrainz_id=None):
 		"""Searches the database for an existing artist that matches the specified criteria.
 		If no existing artist can be found, a new artist is created with the criteria
 		"""
@@ -184,6 +193,7 @@ class ImportThread(threading.Thread):
 			# artist in our db, try to find an existing artist by name
 			artist = self.sa_session.query(Artist).filter(Artist.name == name).first()
 			if artist != None:
+				self.log.debug(u'Found existing artist %s in database' % name)
 				# found an existing artist in our db - compare its metadata
 				# to the new info. Always prefer existing metadata over new.
 				if name_sort != None:
@@ -193,17 +203,20 @@ class ImportThread(threading.Thread):
 						self.log.warning(u'Artist sort name conflict for artist %s: %s != %s', artist.name, artist.name_sort, name_sort)
 			else:
 				# an existing artist could not be found in our db. Make a new one
+				self.log.debug(u'Artist not found in database; creating %s' % name)
 				artist = Artist(name)
 				if name_sort != None:
 					artist.name_sort = name_sort
 				if musicbrainz_id != None:
 					artist.musicbrainz_artistid = musicbrainz_id
+				# add the artist object to the DB 
+				self.sa_session.add(artist)
 
 		# return the artist that we found and/or created
 		return artist
 
 
-	def findAlbum(title=None, title_sort=None, musicbrainz_id=None, artist=None, metadata=None):
+	def findAlbum(self, title=None, title_sort=None, musicbrainz_id=None, artist=None, metadata=None):
 		"""Searches the database for an existing album that matches the specified criteria.
 		If no existing album can be found, a new album is created with the criteria.
 		"""
@@ -241,6 +254,7 @@ class ImportThread(threading.Thread):
 			if album != None:
 				# found an existing album in our db - compare its metadata
 				# to the new info. Always prefer existing metadata over new.
+				self.log.debug(u'Found existing album %s in database' % title)
 				if title_sort != None:
 					if album.title_sort == None:
 						album.title_sort = title_sort
@@ -248,6 +262,7 @@ class ImportThread(threading.Thread):
 						self.log.warning(u'Album sort title conflict for album %s: %s != %s', album.title, album.title_sort, title_sort)
 			else:
 				# an existing album could not be found in our db. Make a new one
+				self.log.debug(u'Album not found in database; creating %s' % title)
 				album = Album(title)
 				if title_sort != None:
 					album.title_sort = title_sort
@@ -255,6 +270,7 @@ class ImportThread(threading.Thread):
 					album.musicbrainz_albumid = musicbrainz_id
 				if artist != None:
 					album.artist = artist
+				self.sa_session.add(album)
 
 		# we either found or created the album. now verify its metadata
 		if album != None and metadata != None:
@@ -304,7 +320,7 @@ class ImportThread(threading.Thread):
 		return album
 
 
-	def findDisc(album=None, discnumber=None, discsubtitle=None, musicbrainz_id=None):
+	def findDisc(self, album=None, discnumber=None, discsubtitle=None, musicbrainz_id=None):
 		"""Tries to find an existing disc that matches the specified criteria.
 		If an existing disc cannot be found, creates a new disc with the specified criteria.
 		"""
@@ -361,6 +377,7 @@ class ImportThread(threading.Thread):
 						self.log.warning(u'Disc musicbrainz_discid conflict for disc %s: %s != %s', disc, disc.musicbrainz_discid, musicbrainz_id)
 			else:
 				# could not find the disc in question. Create a new one instead
+				self.log.debug(u'Could not find disc in database; creating %s' % discnumber)				
 				disc = Disc(discnumber)
 				if album != None:
 					disc.album = album
@@ -368,6 +385,7 @@ class ImportThread(threading.Thread):
 					disc.discsubtitle = discsubtitle
 				if musicbrainz_id != None:
 					disc.musicbrainz_discid = musicbrainz_id
+				self.sa_session.add(disc)
 
 		return disc
 

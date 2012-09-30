@@ -1,19 +1,12 @@
-<!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8">
-		<title>Musik - Import Media</title>
-		<link rel="stylesheet" href="/static/styles/style.css" />
-	</head>
-	<body>
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
-
+<div class="grid_12">
 		<h1>Musik Media Importer</h1>
 		<p>From this page, you can import all of your precious media files into the musik database. Start by entering a directory below:</p>
+		
+		<div class="validate-error" id="validate-error-top"></div>
 
-		<form class="importfolder" action="/api/importmedia/directory" method="post">
+		<form class="importfolder" action="/api/importmedia/directory" method="post" id="importmedia-form">
 			<fieldset>
-				<legend>Enter the path to a directory below:&nbsp</legend>
+				<legend>Enter the path to a directory below:&nbsp;</legend>
 				<ol>
 					<li>
 						<label for="path">Path<em>*</em></label>
@@ -25,5 +18,5 @@
 		</form>
 
 		<a href="/">Back to Home</a>
-	</body>
-</html>
+</div>
+<div class="clear"></div>

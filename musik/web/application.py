@@ -18,7 +18,7 @@ templates = TemplateLookup(directories=['templates'], module_directory='template
 
 
 # A plugin to help SQLAlchemy bind correctly to CherryPy threads
- # See http://www.defuze.org/archives/222-integrating-sqlalchemy-into-a-cherrypy-application.html
+# See http://www.defuze.org/archives/222-integrating-sqlalchemy-into-a-cherrypy-application.html
 class SAEnginePlugin(plugins.SimplePlugin):
     def __init__(self, bus):
         plugins.SimplePlugin.__init__(self, bus)
@@ -65,14 +65,52 @@ class SATool(cherrypy.Tool):
 # defines the web application that is the default client
 class Musik:
 	api = api.API()
+	
+	def _header(self, **kwargs):
+		return templates.get_template('header.html').render(**kwargs)
+		
+	def _footer(self, **kwargs):
+		return templates.get_template('footer.html').render(**kwargs)
+		
+	def _render(self, template_name, **kwargs):
+		return templates.get_template(template_name).render(**kwargs)
+		
+	# Render an entire page with the passed variables
+	def _render_page(self, template_names, **kwargs):
+		result = []
+		
+		if type(template_names) != list:
+			# Create one-element list
+			template_names = [template_names]
+			
+		# Make sure mandatory variables are always in kwargs
+		# These will cause the page to fail miserably if not present
+		mandatory_vars = ('title', 'js_appends')
+		for var in mandatory_vars:
+			if var not in kwargs:
+				kwargs[var] = u''
+		
+		result.append(self._header(**kwargs))
+				
+		for template in template_names:
+			result.append(self._render(template, **kwargs))
+			
+		result.append(self._footer(**kwargs))
+		return result
+		
 
 	@cherrypy.expose
 	def index(self):
-		return templates.get_template('index.html').render()
+		return self._render_page("index.html", **{
+			"title": "Home"
+		})
 
 	@cherrypy.expose
 	def importmedia(self):
-		return templates.get_template('importmedia.html').render()
+		return self._render_page("importmedia.html", **{
+			"title": "Import Media",
+			"js_appends": ['importmedia/validator.js'],
+		})
 
 
 # starts the web app. this call will block until the server goes down
