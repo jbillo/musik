@@ -37,7 +37,12 @@ class ImportThread(threading.Thread):
 			while self.running:
 
 				# find the first unprocessed import task
-				task = self.sa_session.query(ImportTask).filter(ImportTask.started == None).order_by(ImportTask.created).first()
+				try:
+					task = self.sa_session.query(ImportTask).filter(ImportTask.started == None).order_by(ImportTask.created).first()
+				except ex as OperationalError:
+					# Ran into this when my SQLite database was locked. 
+					self.log.error(u'Operational error accessing database. Ensure it is not open by another process.')
+					break
 				if task != None:
 					# start processing it
 					task.started = datetime.utcnow()
@@ -113,11 +118,13 @@ class ImportThread(threading.Thread):
 		self.log.info(u'ImportFile called with uri %s', uri)
 
 		mtype = mimetypes.guess_type(uri)[0]
-		if mtype == u'audio/mpeg':
-			pass
-		else:
+		if mtype != u'audio/mpeg':
 			self.log.info(u'Unsupported mime type %s. Ignoring file.', mtype)
 
+		# Try to read the metadata appropriately.
+		metadata = self.readMp3MetaData(uri)
+		print metadata
+		
 
 	def readMp3MetaData(self, uri):
 		# TODO: check that the uri doesn't already exist
@@ -152,6 +159,8 @@ class ImportThread(threading.Thread):
 		track.album = self.findAlbum(metadata['album'], metadata['albumsort'], metadata['musicbrainz_albumid'], metadata)
 		if track.album != None:
 			disc = self.findDisc(track.album, metadata['discnumber'], metadata['discsubtitle'], metadata['musicbrainz_discid'])
+			
+		return track
 
 
 	def findArtist(name=None, name_sort=None, musicbrainz_id=None):
