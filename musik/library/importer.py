@@ -39,7 +39,7 @@ class ImportThread(threading.Thread):
 				# find the first unprocessed import task
 				try:
 					task = self.sa_session.query(ImportTask).filter(ImportTask.started == None).order_by(ImportTask.created).first()
-				except ex as OperationalError:
+				except OperationalError as ex:
 					# Ran into this when my SQLite database was locked. 
 					self.log.error(u'Operational error accessing database. Ensure it is not open by another process.')
 					break
