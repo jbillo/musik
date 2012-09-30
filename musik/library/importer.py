@@ -372,6 +372,36 @@ class ImportThread(threading.Thread):
 				# TODO: conflict!
 				self.log.warning(u'Track website conflict for track %s: %s != %s', track, track.website, metadata['website'])
 
+		# get id3 data from the file
+		id3 = MP3(uri)
+
+		# copy data to a new dict that only uses the first value of each key.
+		# technically this is discarding data, but most keys are only allowed
+		# a single value anyway, and it simplifies the following algorithm
+		metadata = EasygoingDictionary()
+		for key in id3.keys():
+			metadata[key] = id3[key][0]
+
+		# play count can be stored in either the PCNT or the POPM frames.
+		# choose the largest of the two values as our official playcount.
+		playcount = 0
+		if metadata['PCNT'] != None and metadata['PCNT'].count != None:
+			playcount = int(metadata['PCNT'].count)
+
+		if metadata['POPM'] != None and metadata['POPM'].count != None:
+			if int(metadata['POPM'].count) > playcount:
+				playcount = int(metadata['POPM'].count)
+
+		# always take the largest playcount
+		if track.playcount == None or track.playcount < playcount:
+			track.playcount = playcount
+
+		# rating is stored in the POPM frame
+		# only ever set the rating if it is currently None - we never want to overwrite a user's rating
+		if metadata['POPM'] != None and metadata['POPM'].rating != None:
+			if track.rating == None:
+				track.rating = int(metadata['POPM'].rating)
+
 		return track
 
 
