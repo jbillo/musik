@@ -8,7 +8,7 @@ from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 
 from musik import initLogging
-from musik.db import DatabaseWrapper, ImportTask, Track, Album
+from musik.db import DatabaseWrapper, ImportTask, Track, Album, Artist
 from musik.util import EasygoingDictionary
 
 class ImportThread(threading.Thread):
@@ -149,7 +149,7 @@ class ImportThread(threading.Thread):
 
 		track = Track(uri)
 		track.artist = self.findArtist(metadata['artist'], metadata['artistsort'], metadata['musicbrainz_artistid'])
-		track.album_artist = self.findArtist(metadata['albumartistsort'], metadata['albumartistsort'])
+		track.album_artist = self.findArtist(metadata['albumartist'], metadata['albumartistsort'])
 		track.arranger = self.findArtist(metadata['arranger'])
 		track.composer = self.findArtist(metadata['composer'], metadata['composersort'])
 		track.conductor = self.findArtist(metadata['conductor'])
@@ -163,7 +163,7 @@ class ImportThread(threading.Thread):
 		return track
 
 
-	def findArtist(name=None, name_sort=None, musicbrainz_id=None):
+	def findArtist(self, name=None, name_sort=None, musicbrainz_id=None):
 		"""Searches the database for an existing artist that matches the specified criteria.
 		If no existing artist can be found, a new artist is created with the criteria
 		"""
@@ -212,7 +212,7 @@ class ImportThread(threading.Thread):
 		return artist
 
 
-	def findAlbum(title=None, title_sort=None, musicbrainz_id=None, artist=None, metadata=None):
+	def findAlbum(self, title=None, title_sort=None, musicbrainz_id=None, artist=None, metadata=None):
 		"""Searches the database for an existing album that matches the specified criteria.
 		If no existing album can be found, a new album is created with the criteria.
 		"""
@@ -313,7 +313,7 @@ class ImportThread(threading.Thread):
 		return album
 
 
-	def findDisc(album=None, discnumber=None, discsubtitle=None, musicbrainz_id=None):
+	def findDisc(self, album=None, discnumber=None, discsubtitle=None, musicbrainz_id=None):
 		"""Tries to find an existing disc that matches the specified criteria.
 		If an existing disc cannot be found, creates a new disc with the specified criteria.
 		"""
