@@ -40,7 +40,7 @@ class ImportThread(threading.Thread):
 				try:
 					task = self.sa_session.query(ImportTask).filter(ImportTask.started == None).order_by(ImportTask.created).first()
 				except OperationalError as ex:
-					# Ran into this when my SQLite database was locked. 
+					# Ran into this when my SQLite database was locked.
 					self.log.error(u'Operational error accessing database. Ensure it is not open by another process.')
 					break
 				if task != None:
@@ -156,10 +156,10 @@ class ImportThread(threading.Thread):
 		track.performer = self.findArtist(metadata['performer'])
 		track.title = metadata['title']
 
-		track.album = self.findAlbum(metadata['album'], metadata['albumsort'], metadata['musicbrainz_albumid'])
+		track.album = self.findAlbum(metadata['album'], metadata['albumsort'], metadata['musicbrainz_albumid'], track.artist, metadata)
 		if track.album != None:
 			disc = self.findDisc(track.album, metadata['discnumber'], metadata['discsubtitle'], metadata['musicbrainz_discid'])
-			
+
 		return track
 
 
@@ -209,7 +209,7 @@ class ImportThread(threading.Thread):
 					artist.name_sort = name_sort
 				if musicbrainz_id != None:
 					artist.musicbrainz_artistid = musicbrainz_id
-				# add the artist object to the DB 
+				# add the artist object to the DB
 				self.sa_session.add(artist)
 
 		# return the artist that we found and/or created
@@ -377,7 +377,7 @@ class ImportThread(threading.Thread):
 						self.log.warning(u'Disc musicbrainz_discid conflict for disc %s: %s != %s', disc, disc.musicbrainz_discid, musicbrainz_id)
 			else:
 				# could not find the disc in question. Create a new one instead
-				self.log.debug(u'Could not find disc in database; creating %s' % discnumber)				
+				self.log.debug(u'Could not find disc in database; creating %s' % discnumber)
 				disc = Disc(discnumber)
 				if album != None:
 					disc.album = album
