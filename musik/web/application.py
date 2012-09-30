@@ -82,6 +82,13 @@ class Musik:
 		if type(template_names) != list:
 			# Create one-element list
 			template_names = [template_names]
+			
+		# Make sure mandatory variables are always in kwargs
+		# These will cause the page to fail miserably if not present
+		mandatory_vars = ('title', 'js_appends')
+		for var in mandatory_vars:
+			if var not in kwargs:
+				kwargs[var] = u''
 		
 		result.append(self._header(**kwargs))
 				
