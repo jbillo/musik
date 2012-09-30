@@ -154,11 +154,12 @@ class ImportThread(threading.Thread):
 		track.conductor = self.findArtist(metadata['conductor'])
 		track.lyricist = self.findArtist(metadata['lyricist'])
 		track.performer = self.findArtist(metadata['performer'])
-		track.title = metadata['title']
 
 		track.album = self.findAlbum(metadata['album'], metadata['albumsort'], metadata['musicbrainz_albumid'], track.artist, metadata)
 		if track.album != None:
 			disc = self.findDisc(track.album, metadata['discnumber'], metadata['discsubtitle'], metadata['musicbrainz_discid'])
+
+		track.title = metadata['title']
 
 		return track
 
@@ -175,6 +176,7 @@ class ImportThread(threading.Thread):
 			if artist != None:
 				# found an existing artist in our db - compare its metadata
 				# to the new info. Always prefer existing metadata over new.
+				self.log.debug(u'Artist name musicbrainz_artistid search found existing artist %s in database' % artist)
 				if name != None:
 					if artist.name == None:
 						artist.name = name
@@ -193,7 +195,7 @@ class ImportThread(threading.Thread):
 			# artist in our db, try to find an existing artist by name
 			artist = self.sa_session.query(Artist).filter(Artist.name == name).first()
 			if artist != None:
-				self.log.debug(u'Found existing artist %s in database' % name)
+				self.log.debug(u'Artist name search found existing artist %s in database' % artist)
 				# found an existing artist in our db - compare its metadata
 				# to the new info. Always prefer existing metadata over new.
 				if name_sort != None:
@@ -203,13 +205,13 @@ class ImportThread(threading.Thread):
 						self.log.warning(u'Artist sort name conflict for artist %s: %s != %s', artist.name, artist.name_sort, name_sort)
 			else:
 				# an existing artist could not be found in our db. Make a new one
-				self.log.debug(u'Artist not found in database; creating %s' % name)
 				artist = Artist(name)
 				if name_sort != None:
 					artist.name_sort = name_sort
 				if musicbrainz_id != None:
 					artist.musicbrainz_artistid = musicbrainz_id
 				# add the artist object to the DB
+				self.log.debug(u'Artist not found in database. Created new artist %s' % artist)
 				self.sa_session.add(artist)
 
 		# return the artist that we found and/or created
@@ -228,6 +230,7 @@ class ImportThread(threading.Thread):
 			if album != None:
 				# found an existing album in our db - compare its metadata
 				# to the new info. Always prefer existing metadata over new.
+				self.log.debug(u'Album musicbrainz_albumid search found existing album %s in database' % album)
 				if title != None:
 					if album.title == None:
 						album.title = title
@@ -254,7 +257,7 @@ class ImportThread(threading.Thread):
 			if album != None:
 				# found an existing album in our db - compare its metadata
 				# to the new info. Always prefer existing metadata over new.
-				self.log.debug(u'Found existing album %s in database' % title)
+				self.log.debug(u'Album title/artist search found existing album %s in database' % album)
 				if title_sort != None:
 					if album.title_sort == None:
 						album.title_sort = title_sort
@@ -262,7 +265,6 @@ class ImportThread(threading.Thread):
 						self.log.warning(u'Album sort title conflict for album %s: %s != %s', album.title, album.title_sort, title_sort)
 			else:
 				# an existing album could not be found in our db. Make a new one
-				self.log.debug(u'Album not found in database; creating %s' % title)
 				album = Album(title)
 				if title_sort != None:
 					album.title_sort = title_sort
@@ -270,6 +272,7 @@ class ImportThread(threading.Thread):
 					album.musicbrainz_albumid = musicbrainz_id
 				if artist != None:
 					album.artist = artist
+				self.log.debug(u'Album not found in database. Created new album %s' % album)
 				self.sa_session.add(album)
 
 		# we either found or created the album. now verify its metadata
@@ -340,6 +343,7 @@ class ImportThread(threading.Thread):
 			# some other tagger has already verified the metadata.
 			disc = self.sa_session.query(Disc).filter(Disc.musicbrainz_discid == musicbrainz_id).first()
 			if disc != None:
+				self.log.debug(u'Disc musicbrainz_discid search found existing disc %s in database' % disc)
 				if album != None:
 					if disc.album == None:
 						disc.album = album
@@ -363,6 +367,7 @@ class ImportThread(threading.Thread):
 			# try to search with album id and disc number instead.
 			disc = self.sa_session.query(Disc).filter(Disc.album_id == album.id, Disc.discnumber == discnumber)
 			if disc != None:
+				self.log.debug(u'Disc album/number search found existing disc %s in database' % disc)
 				if discsubtitle != None:
 					if disc.discsubtitle == None:
 						disc.discsubtitle = discsubtitle
@@ -377,7 +382,6 @@ class ImportThread(threading.Thread):
 						self.log.warning(u'Disc musicbrainz_discid conflict for disc %s: %s != %s', disc, disc.musicbrainz_discid, musicbrainz_id)
 			else:
 				# could not find the disc in question. Create a new one instead
-				self.log.debug(u'Could not find disc in database; creating %s' % discnumber)
 				disc = Disc(discnumber)
 				if album != None:
 					disc.album = album
@@ -385,6 +389,7 @@ class ImportThread(threading.Thread):
 					disc.discsubtitle = discsubtitle
 				if musicbrainz_id != None:
 					disc.musicbrainz_discid = musicbrainz_id
+				self.log.debug(u'Could not find disc in database. Created new disc %s' % disc)
 				self.sa_session.add(disc)
 
 		return disc
