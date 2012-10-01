@@ -10,7 +10,7 @@ from mutagen.mp3 import MP3
 from sqlalchemy.exc import OperationalError
 
 from musik import initLogging
-from musik.db import DatabaseWrapper, ImportTask, Track, Album, Artist
+from musik.db import DatabaseWrapper, ImportTask, Track, Album, Artist, Disc
 from musik.util import EasygoingDictionary
 
 class ImportThread(threading.Thread):
@@ -116,22 +116,28 @@ class ImportThread(threading.Thread):
 
 
 	def importFile(self, uri):
-		#TODO: actually import the file
-		self.log.info(u'ImportFile called with uri %s', uri)
+		self.log.debug(u'ImportFile called with uri %s', uri)
 
 		mtype = mimetypes.guess_type(uri)[0]
 		if mtype != u'audio/mpeg':
 			self.log.info(u'Unsupported mime type %s. Ignoring file.', mtype)
 
 		# Try to read the metadata appropriately.
-		metadata = self.readMp3MetaData(uri)
+		self.createTrack(uri)
 
 
-	def readMp3MetaData(self, uri):
-		# TODO: check that the uri doesn't already exist in our library
+	def createTrack(self, uri):
+		"""Creates a track object out of the specified URI.
+		Returns a fully populated musik.db.Track object that has already been
+		committed to the database.
+		"""
+		self.log.debug(u'createTrack called with uri %s', uri)
+
+		# check that the uri doesn't already exist in our library
 		track = self.sa_session.query(Track).filter(Track.uri == uri).first()
 		if track == None:
 			track = Track(uri)
+			self.sa_session.add(track)
 		else:
 			self.log.info(u'Track with uri %s is already in the library. Updating metadata...')
 
@@ -234,7 +240,7 @@ class ImportThread(threading.Thread):
 					# found disc is already linked - don't add it again
 					disc = None
 			if disc != None:
-				track.album.discs.add(disc)
+				track.album.discs.append(disc)
 
 		#bpm
 		if metadata['bpm'] != None:
@@ -380,6 +386,11 @@ class ImportThread(threading.Thread):
 		# a single value anyway, and it simplifies the following algorithm
 		metadata = EasygoingDictionary()
 		for key in id3.keys():
+			# TODO: these frames are singletons, so we can't use the array
+			# index when accessing them. for now we'll boot out, but we
+			# need a better way to do this.
+			if key.startswith('APIC') or key.startswith('UFID') or key.startswith('USLT'):
+				continue
 			metadata[key] = id3[key][0]
 
 		# play count can be stored in either the PCNT or the POPM frames.
@@ -402,7 +413,7 @@ class ImportThread(threading.Thread):
 			if track.rating == None:
 				track.rating = int(metadata['POPM'].rating)
 
-		return track
+		self.log.info(u'Added track %s to the current session.', track)
 
 
 	def findArtist(self, name=None, name_sort=None, musicbrainz_id=None):
@@ -459,6 +470,7 @@ class ImportThread(threading.Thread):
 		return artist
 
 
+	# TODO: Need support for album artist?
 	def findAlbum(self, title=None, title_sort=None, musicbrainz_id=None, artist=None, metadata=None):
 		"""Searches the database for an existing album that matches the specified criteria.
 		If no existing album can be found, a new album is created with the criteria.
@@ -487,14 +499,14 @@ class ImportThread(threading.Thread):
 				if artist != None:
 					if album.artist == None:
 						album.artist = artist
-					elif album.artist.id != artist.id:
+					elif album.artist_id != artist.id:
 						# TODO: conflict -> schedule musicbrainz task!
 						self.log.warning(u'Album artist conflict for musicbrainz_albumid %s: %s != %s', album.musicbrainz_albumid, album.artist, artist)
 
 		if album == None and title != None and artist != None:
 			# if we don't have musicbrainz_albumid or there is no matching
 			# album in our db, try to find an existing album by title and artist
-			album = self.sa_session.query(Album).filter(Album.title == title, Album.artist.id == artist.id).first()
+			album = self.sa_session.query(Album).filter(Album.title == title, Album.artist_id == artist.id).first()
 			if album != None:
 				# found an existing album in our db - compare its metadata
 				# to the new info. Always prefer existing metadata over new.
@@ -638,7 +650,7 @@ class ImportThread(threading.Thread):
 		if disc == None and album != None and discnumber != None:
 			# musicbrainz_discid wasn't supplied or didn't yield an existing album.
 			# try to search with album id and disc number instead.
-			disc = self.sa_session.query(Disc).filter(Disc.album_id == album.id, Disc.discnumber == discnumber)
+			disc = self.sa_session.query(Disc).filter(Disc.album_id == album.id, Disc.discnumber == discnumber).first()
 			if disc != None:
 				self.log.debug(u'Disc album/number search found existing disc %s in database' % disc)
 				if discsubtitle != None:

@@ -35,7 +35,7 @@ def cleanup(signum=None, frame=None):
 # application entry - starts the database connection and dev server
 if __name__ == '__main__':
 	global log, importThread, app
-	
+
 	threads = []
 
 	# get logging set up
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 		except IOError:
 			print u"Could not create log directory %s" % log_dir
 			sys.exit(1)
-			
+
 	log = initLogging(__name__)
 
 	# TODO: also register for CherryPy shutdown messages

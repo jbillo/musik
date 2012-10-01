@@ -77,18 +77,21 @@ class Album(Base):
 	collection of related songs that may or may not have a physical representation.
 	"""
 	__tablename__ = 'albums'
-	id = Column(Integer, primary_key=True)	# unique id
-	title = Column(String)					# the title of the album
-	title_sort = Column(String)				# sortable title of the album
-	asin = Column(String)					# amazon standard identification number - only if physical
-	barcode = Column(String)				# physical album barcode
-	compilation = Column(Boolean)			# whether or not this album is a compilation
-	media_type = Column(String)				# the type of media (CD, etc)
-	musicbrainz_albumid = Column(String)	# unique 36-digit musicbrainz hex string
-	musicbrainz_albumstatus = Column(String)# unique 36-digit musicbrainz hex string
-	musicbrainz_albumtype = Column(String)	# unique 36-digit musicbrainz hex string
-	organization = Column(String)			# organization that released the album (usually a record company)
-	releasecountry = Column(String)			# the country that this album was released in
+	id = Column(Integer, primary_key=True)					# unique id
+	title = Column(String)									# the title of the album
+	title_sort = Column(String)								# sortable title of the album
+	artist_id = Column(Integer, ForeignKey('artists.id'))	# the artist that recorded this album
+	asin = Column(String)									# amazon standard identification number - only if physical
+	barcode = Column(String)								# physical album barcode
+	compilation = Column(Boolean)							# whether or not this album is a compilation
+	media_type = Column(String)								# the type of media (CD, etc)
+	musicbrainz_albumid = Column(String)					# unique 36-digit musicbrainz hex string
+	musicbrainz_albumstatus = Column(String)				# unique 36-digit musicbrainz hex string
+	musicbrainz_albumtype = Column(String)					# unique 36-digit musicbrainz hex string
+	organization = Column(String)							# organization that released the album (usually a record company)
+	releasecountry = Column(String)							# the country that this album was released in
+
+	artist = relationship('Artist', backref=backref('albums', order_by=id))
 
 	def __init__(self, title):
 		Base.__init__(self)
@@ -118,19 +121,19 @@ class Disc(Base):
 	# columns
 	id = Column(Integer, primary_key=True)				# unique id
 	album_id = Column(Integer, ForeignKey('albums.id'))	# the album that this disc belongs to
-	discnumber = Column(Integer)						# the play order of this disc in the collection
+	discnumber = Column(String)							# the play order of this disc in the collection
 	disc_subtitle = Column(String)						# the subtitle (if applicable) of this disc
 	musicbrainz_discid = Column(String)					# unique 36-digit musicbrainz hex string
 
 	# relationships
-	album = relationship('Album', backref=backref('discs', order_by=discnumber))
+	album = relationship('Album', backref=backref('discs', order_by=discnumber, lazy='dynamic'))
 
 	def __init__(self, discnumber):
 		Base.__init__(self)
 		self.discnumber = discnumber
 
 	def __unicode__(self):
-		return u'<Disc(album_id=%i, discnumber=%i)>' % (self.album_id, self.discnumber)
+		return u'<Disc(album=%s, discnumber=%s)>' % (self.album, self.discnumber)
 
 	def __str__(self):
 		return unicode(self).encode('utf-8')
