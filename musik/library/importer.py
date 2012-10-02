@@ -109,7 +109,7 @@ class ImportThread(threading.Thread):
 	# TODO: query gstreamer (or whatever other backend we're using) to determine support up front
 	def isMimeTypeSupported(self, uri):
 		mtype = mimetypes.guess_type(uri)[0]
-		if mtype == u'audio/mpeg' or mtype == u'audio/flac' or mtype == u'audio/ogg' or mtype == u'audio/x-wav':
+		if mtype in (u'audio/mpeg', u'audio/flac', u'audio/ogg', u'audio/x-wav'):
 			return True
 		else:
 			return False
@@ -134,7 +134,19 @@ class ImportThread(threading.Thread):
 		self.log.debug(u'createTrack called with uri %s', uri)
 
 		# check that the uri doesn't already exist in our library
-		track = self.sa_session.query(Track).filter(Track.uri == uri).first()
+		try:
+			track = self.sa_session.query(Track).filter(Track.uri == uri).first()
+		except OperationalError as oe:
+			error_text = str(oe)
+			if error_text.startswith(u"(OperationalError) no such column:"):
+				# Database schema has likely changed
+				self.log.error(u"One or more columns does not exist in the database. You may be able to repair it yourself.")
+				self.log.error(u"If you are developing and don't care about your data, just delete the musik.db file.")
+				# Fall through and print exception details so the user can adjust as necessary
+				
+			self.log.error(u"An error occurred accessing the database: %s" % error_text)
+			return
+			
 		if track == None:
 			track = Track(uri)
 			self.sa_session.add(track)
@@ -144,12 +156,12 @@ class ImportThread(threading.Thread):
 		# get id3 data from the file
 		easyid3 = EasyID3(uri)
 
-		# copy data to a new dict that only uses the first value of each key.
-		# technically this is discarding data, but most keys are only allowed
-		# a single value anyway, and it simplifies the following algorithm
 		metadata = EasygoingDictionary()
 		for key in easyid3.keys():
-			metadata[key] = easyid3[key][0]
+			if type(easyid3[key]) == list:
+				metadata[key] = easyid3[key][0]
+			else:
+				metadata[key] = easyid3[key]
 
 		# artist
 		artist = self.findArtist(metadata['artist'], metadata['artistsort'], metadata['musicbrainz_artistid'])
@@ -381,17 +393,12 @@ class ImportThread(threading.Thread):
 		# get id3 data from the file
 		id3 = MP3(uri)
 
-		# copy data to a new dict that only uses the first value of each key.
-		# technically this is discarding data, but most keys are only allowed
-		# a single value anyway, and it simplifies the following algorithm
 		metadata = EasygoingDictionary()
 		for key in id3.keys():
-			# TODO: these frames are singletons, so we can't use the array
-			# index when accessing them. for now we'll boot out, but we
-			# need a better way to do this.
-			if key.startswith('APIC') or key.startswith('UFID') or key.startswith('USLT'):
-				continue
-			metadata[key] = id3[key][0]
+			if type(id3[key]) == list:
+				metadata[key] = id3[key][0]
+			else:
+				metadata[key] = id3[key]		
 
 		# play count can be stored in either the PCNT or the POPM frames.
 		# choose the largest of the two values as our official playcount.
