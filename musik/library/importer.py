@@ -1,6 +1,7 @@
 from datetime import datetime
 import mimetypes
 import os
+import re
 import threading
 import time
 
@@ -143,10 +144,10 @@ class ImportThread(threading.Thread):
 				self.log.error(u"One or more columns does not exist in the database. You may be able to repair it yourself.")
 				self.log.error(u"If you are developing and don't care about your data, just delete the musik.db file.")
 				# Fall through and print exception details so the user can adjust as necessary
-				
+
 			self.log.error(u"An error occurred accessing the database: %s" % error_text)
 			return
-			
+
 		if track == None:
 			track = Track(uri)
 			self.sa_session.add(track)
@@ -398,7 +399,7 @@ class ImportThread(threading.Thread):
 			if type(id3[key]) == list:
 				metadata[key] = id3[key][0]
 			else:
-				metadata[key] = id3[key]		
+				metadata[key] = id3[key]
 
 		# play count can be stored in either the PCNT or the POPM frames.
 		# choose the largest of the two values as our official playcount.
@@ -419,6 +420,26 @@ class ImportThread(threading.Thread):
 		if metadata['POPM'] != None and metadata['POPM'].rating != None:
 			if track.rating == None:
 				track.rating = int(metadata['POPM'].rating)
+
+		# if we couldn't determine track, album, artist from metadata, try
+		# to snag it from the path
+		# track name = file name, album title = last directory in path,
+		# artist name = second last directory in path.
+		(dirName, fileName) = os.path.split(uri)
+		(fileBaseName, fileExtension)=os.path.splitext(fileName)
+		if track.title == None:
+			track.title = fileBaseName
+			track.title_sort = fileBaseName
+
+		dirs = re.split(os.sep, dirName)
+		if len(dirs) > 0:
+			if track.album == None:
+				track.album = self.findAlbum(dirs[-1])
+
+		if len(dirs) > 1:
+			if track.artist == None:
+				track.artist = self.findArtist(dirs[-2])
+				track.album_artist = self.findArtist(dirs[-2])
 
 		self.log.info(u'Added track %s to the current session.', track)
 
