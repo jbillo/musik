@@ -169,24 +169,34 @@ class ImportThread(threading.Thread):
 		if artist != None:
 			if track.artist == None:
 				track.artist = artist
+				self.sa_session.add(artist)
 			elif track.artist.id != artist.id:
 				# TODO: conflict!
 				self.log.warning(u'Artist conflict for track %s: %s != %s', track, track.artist, artist)
 
-		# album artist
+		# album artist - use the artist if metadata isn't set
 		album_artist = self.findArtist(metadata['albumartist'], metadata['albumartistsort'])
 		if album_artist != None:
 			if track.album_artist == None:
 				track.album_artist = album_artist
+				self.sa_session.add(album_artist)
 			elif track.album_artist.id != album_artist.id:
 				# TODO: conflict!
 				self.log.warning(u'Album artist conflict for track %s: %s != %s', track, track.album_artist, album_artist)
+		elif artist != None:
+			if track.album_artist == None:
+				track.album_artist = artist
+				self.sa_session.add(artist)
+			elif track.album_artist.id != artist.id:
+				# TODO: conflict!
+				self.log.warning(u'Album artist conflict for track %s: %s != %s', track, track.album_artist, artist)
 
 		# arranger
 		arranger = self.findArtist(metadata['arranger'])
 		if arranger != None:
 			if track.arranger == None:
 				track.arranger = arranger
+				self.sa_session.add(arranger)
 			elif track.arranger.id != arranger.id:
 				# TODO: conflict!
 				self.log.warning(u'Arranger conflict for track %s: %s != %s', track, track.arranger, arranger)
@@ -196,6 +206,7 @@ class ImportThread(threading.Thread):
 		if author != None:
 			if track.author == None:
 				track.author = author
+				self.sa_session.add(author)
 			elif track.author.id != author.id:
 				# TODO: conflict!
 				self.log.warning(u'Author conflict for track %s: %s != %s', track, track.author, author)
@@ -205,6 +216,7 @@ class ImportThread(threading.Thread):
 		if composer != None:
 			if track.composer == None:
 				track.composer = composer
+				self.sa_session.add(composer)
 			elif track.composer.id != composer.id:
 				# TODO: conflict!
 				self.log.warning(u'Composer conflict for track %s: %s != %s', track, track.composer, composer)
@@ -214,6 +226,7 @@ class ImportThread(threading.Thread):
 		if conductor != None:
 			if track.conductor == None:
 				track.conductor = conductor
+				self.sa_session.add(conductor)
 			elif track.conductor.id != conductor.id:
 				# TODO: conflict!
 				self.log.warning(u'Conductor conflict for track %s: %s != %s', track, track.conductor, conductor)
@@ -223,6 +236,7 @@ class ImportThread(threading.Thread):
 		if lyricist != None:
 			if track.lyricist == None:
 				track.lyricist = lyricist
+				self.sa_session.add(lyricist)
 			elif track.lyricist.id != lyricist.id:
 				# TODO: conflict!
 				self.log.warning(u'Lyricist conflict for track %s: %s != %s', track, track.lyricist, lyricist)
@@ -232,6 +246,7 @@ class ImportThread(threading.Thread):
 		if performer != None:
 			if track.performer == None:
 				track.performer = performer
+				self.sa_session.add(performer)
 			elif track.performer.id != performer.id:
 				# TODO: conflict!
 				self.log.warning(u'Performer conflict for track %s: %s != %s', track, track.performer, performer)
@@ -241,6 +256,7 @@ class ImportThread(threading.Thread):
 		if album != None:
 			if track.album == None:
 				track.album = album
+				self.sa_session.add(album)
 			elif track.album.id != album.id:
 				# TODO: conflict!
 				self.log.warning(u'Album conflict for track %s: %s != %s', track, track.album, album)
@@ -433,20 +449,28 @@ class ImportThread(threading.Thread):
 
 		dirs = re.split(os.sep, dirName)
 		if len(dirs) > 0:
-			if track.album == None:
-				track.album = self.findAlbum(dirs[-1])
+			album = self.findAlbum(dirs[-1])
+			if album != None:
+				if track.album == None:
+					track.album = album
+					self.sa_session.add(album)
 
 		if len(dirs) > 1:
-			if track.artist == None:
-				track.artist = self.findArtist(dirs[-2])
-				track.album_artist = self.findArtist(dirs[-2])
+			artist = self.findArtist(dirs[-2])
+			if artist != None:
+				if track.artist == None:
+					track.artist = artist
+					track.album_artist = artist
+					sa_session.add(artist)
 
 		self.log.info(u'Added track %s to the current session.', track)
 
 
 	def findArtist(self, name=None, name_sort=None, musicbrainz_id=None):
 		"""Searches the database for an existing artist that matches the specified criteria.
-		If no existing artist can be found, a new artist is created with the criteria
+		If no existing artist can be found, a new artist is created with the criteria.
+		When a new artist is created, it is not added to the database. This is the responsibility
+		of the calling function.
 		"""
 		artist = None
 		if musicbrainz_id != None:
@@ -492,7 +516,6 @@ class ImportThread(threading.Thread):
 					artist.musicbrainz_artistid = musicbrainz_id
 				# add the artist object to the DB
 				self.log.debug(u'Artist not found in database. Created new artist %s' % artist)
-				self.sa_session.add(artist)
 
 		# return the artist that we found and/or created
 		return artist
@@ -502,6 +525,8 @@ class ImportThread(threading.Thread):
 	def findAlbum(self, title=None, title_sort=None, musicbrainz_id=None, artist=None, metadata=None):
 		"""Searches the database for an existing album that matches the specified criteria.
 		If no existing album can be found, a new album is created with the criteria.
+		When a new album is created, it is not added to the database. This is the responsibility of
+		the calling function.
 		"""
 		album = None
 		if musicbrainz_id != None:
@@ -554,7 +579,6 @@ class ImportThread(threading.Thread):
 				if artist != None:
 					album.artist = artist
 				self.log.debug(u'Album not found in database. Created new album %s' % album)
-				self.sa_session.add(album)
 
 		# we either found or created the album. now verify its metadata
 		if album != None and metadata != None:
