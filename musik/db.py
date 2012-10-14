@@ -68,6 +68,10 @@ class Artist(Base):
 	def __str__(self):
 		return unicode(self).encode('utf-8')
 
+	def as_dict(self):
+		"""Returns a representation of the artist as a dictionary"""
+		return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 class Album(Base):
 	"""An album is a platonic ideal of a collection of released songs.
@@ -104,6 +108,10 @@ class Album(Base):
 	def __str__(self):
 		return unicode(self).encode('utf-8')
 
+	def as_dict(self):
+		"""Returns a representation of the album as a dictionary"""
+		return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 class Disc(Base):
 	"""A disc is a physical platter that comprises a part of the physical
@@ -137,6 +145,10 @@ class Disc(Base):
 
 	def __str__(self):
 		return unicode(self).encode('utf-8')
+
+	def as_dict(self):
+		"""Returns a representation of the disc as a dictionary"""
+		return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 class Track(Base):
@@ -200,6 +212,10 @@ class Track(Base):
 
 	def __str__(self):
 		return unicode(self).encode('utf-8')
+
+	def as_dict(self):
+		"""Returns a representation of the track as a dictionary"""
+		return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 # Loosely wraps the SQLAlchemy database types and access methods.
