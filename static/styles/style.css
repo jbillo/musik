@@ -37,3 +37,13 @@ div.validate-error {
 	padding: 5px;
 	margin-bottom: 10px;
 }
+
+div.main {
+	border-bottom: 1px solid gray;
+}
+
+.grid_6 img {
+	display: block;
+	margin-right: auto;
+	margin-left: auto;
+}

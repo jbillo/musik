@@ -65,44 +65,45 @@ class SATool(cherrypy.Tool):
 # defines the web application that is the default client
 class Musik:
 	api = api.API()
-	
+
 	def _header(self, **kwargs):
 		return templates.get_template('header.html').render(**kwargs)
-		
+
 	def _footer(self, **kwargs):
 		return templates.get_template('footer.html').render(**kwargs)
-		
+
 	def _render(self, template_name, **kwargs):
 		return templates.get_template(template_name).render(**kwargs)
-		
+
 	# Render an entire page with the passed variables
 	def _render_page(self, template_names, **kwargs):
 		result = []
-		
+
 		if type(template_names) != list:
 			# Create one-element list
 			template_names = [template_names]
-			
+
 		# Make sure mandatory variables are always in kwargs
 		# These will cause the page to fail miserably if not present
 		mandatory_vars = ('title', 'js_appends')
 		for var in mandatory_vars:
 			if var not in kwargs:
 				kwargs[var] = u''
-		
+
 		result.append(self._header(**kwargs))
-				
+
 		for template in template_names:
 			result.append(self._render(template, **kwargs))
-			
+
 		result.append(self._footer(**kwargs))
 		return result
-		
+
 
 	@cherrypy.expose
 	def index(self):
 		return self._render_page("index.html", **{
-			"title": "Home"
+			"title": "Home",
+            "js_appends": ['index/artistalbumload.js'],
 		})
 
 	@cherrypy.expose
@@ -116,7 +117,7 @@ class Musik:
 # starts the web app. this call will block until the server goes down
 class MusikWebApplication:
     log = threads = None
-    
+
     def __init__(self, log, threads):
         self.log = log
         self.threads = threads
@@ -126,7 +127,7 @@ class MusikWebApplication:
         SAEnginePlugin(cherrypy.engine).subscribe()
         cherrypy.engine.subscribe("stop", self.stop_threads)
         cherrypy.tools.db = SATool()
-        
+
         config = {'/':
 			{
 				'tools.db.on': True,
