@@ -47,3 +47,7 @@ div.main {
 	margin-right: auto;
 	margin-left: auto;
 }
+
+div.header {
+	background-color: gray;
+}
