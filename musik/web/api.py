@@ -71,36 +71,6 @@ class API:
 
 
 	@cherrypy.expose
-	def artists(self, filter=None):
-		"""Returns unique artists in our database, ordered by name_sort property.
-		If an integer filter is supplied, it must be the id of an artist. If a string
-		filter is supplied, it must be a substring of the name of an artist.
-		"""
-		cherrypy.response.headers['Content-Type'] = 'application/json'
-
-		artists = []
-		if filter != None:
-			try:
-				artists.extend(cherrypy.request.db.query(Artist).filter(Artist.id == filter).order_by(Artist.name_sort, Artist.name).all())
-			except:
-				pass
-
-			# only attempt a name match if the id match failed - this prevents 12 from returning D12
-			if len(artists) == 0:
-				try:
-					artists.extend(cherrypy.request.db.query(Artist).filter(Artist.name.like('%' + filter + '%')).order_by(Artist.name_sort, Artist.name).all())
-				except:
-					pass
-		else:
-			artists.extend(cherrypy.request.db.query(Artist).order_by(Artist.name_sort, Artist.name).all())
-
-		artist_list = []
-		for a in artists:
-			artist_list.append(a.as_dict())
-		return json.dumps(artist_list)
-
-
-	@cherrypy.expose
 	def albums(self, filter=None):
 		"""Returns unique albums in our database, ordered by title_sort property.
 		If an integer filter is supplied, it must be the id of an album. If a string
@@ -128,6 +98,36 @@ class API:
 		for a in albums:
 			album_list.append(a.as_dict())
 		return json.dumps(album_list)
+
+
+	@cherrypy.expose
+	def artists(self, filter=None):
+		"""Returns unique artists in our database, ordered by name_sort property.
+		If an integer filter is supplied, it must be the id of an artist. If a string
+		filter is supplied, it must be a substring of the name of an artist.
+		"""
+		cherrypy.response.headers['Content-Type'] = 'application/json'
+
+		artists = []
+		if filter != None:
+			try:
+				artists.extend(cherrypy.request.db.query(Artist).filter(Artist.id == filter).order_by(Artist.name_sort, Artist.name).all())
+			except:
+				pass
+
+			# only attempt a name match if the id match failed - this prevents 12 from returning D12
+			if len(artists) == 0:
+				try:
+					artists.extend(cherrypy.request.db.query(Artist).filter(Artist.name.like('%' + filter + '%')).order_by(Artist.name_sort, Artist.name).all())
+				except:
+					pass
+		else:
+			artists.extend(cherrypy.request.db.query(Artist).order_by(Artist.name_sort, Artist.name).all())
+
+		artist_list = []
+		for a in artists:
+			artist_list.append(a.as_dict())
+		return json.dumps(artist_list)
 
 
 	@cherrypy.expose
