@@ -1,0 +1,23 @@
+<script language="JavaScript">
+	//load albums with an ajax call
+	//TOOD: generate links to album pages
+	$.get("/api/albums/", function(data){
+		var html = '<ul>'
+		for (var a in data) {
+			html += '<li>' + data[a]['title'] + '</li>'
+		}
+		html += '</ul>'
+		$('.album-list').html(html);
+	}, "json");
+</script>
+
+<div class="container_12">
+	<div class="grid_12 main">
+		<h2>Albums</h2>
+
+		<div class="album-list">
+			<img src="/static/images/ajax-loader.gif" alt="loading..." />
+		</div>
+	</div>
+	<div class="clear"></div>
+</div>

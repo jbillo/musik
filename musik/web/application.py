@@ -98,12 +98,23 @@ class Musik:
 		result.append(self._footer(**kwargs))
 		return result
 
-
 	@cherrypy.expose
 	def index(self):
 		return self._render_page("index.html", **{
 			"title": "Home",
             "js_appends": ['index/artistalbumload.js'],
+		})
+
+	@cherrypy.expose
+	def albums(self):
+		return self._render_page("albums.html", **{
+			"title": "Albums",
+		})
+
+	@cherrypy.expose
+	def artists(self):
+		return self._render_page("artists.html", **{
+			"title": "Artists",
 		})
 
 	@cherrypy.expose
