@@ -63,4 +63,6 @@ if __name__ == '__main__':
 	# this is a blocking call
 	log.info(u'Starting Web App')
 	app = musik.web.application.MusikWebApplication(log=log, threads=threads)
-	app.start()
+
+	port = int(os.environ.get('PORT', '8080'))
+	app.start(port=port)
