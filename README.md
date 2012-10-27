@@ -1,6 +1,6 @@
-#Music
+#Musik
 
-A web-based streaming media library and player.
+A web-based streaming media library and player. Run Musik on your home server to gain unlimited access to your music collection from anywhere in the world.
 
 ##Getting Started
 
