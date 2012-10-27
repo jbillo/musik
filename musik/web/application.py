@@ -154,7 +154,9 @@ class MusikWebApplication:
 
 
     # a blocking call that starts the web application listening for requests
-    def start(self):
+    def start(self, port=8080):
+        cherrypy.config.update({'server.socket_host': '0.0.0.0',})
+        cherrypy.config.update({'server.socket_port': port,})
         cherrypy.engine.start()
         cherrypy.engine.block()
 
