@@ -51,7 +51,23 @@ class API:
 	@cherrypy.expose
 	def default(self, *params):
 		#TODO: pull all available tags from the database so this regex is dynamic and allows any tag
-		regex = re.compile('genre|artist|album|track')
+		#regex = re.compile('genre|artist|album|track')
+		cherrypy.response.headers['Content-Type'] = 'application/json'
+
+		#the first item in the url is the object that is being queried
+		#the remainder are key value pairs of the things to query and their desired ids
+		#split them into a list of dictionary pairs prior to processing
+		query = []
+		for index in range(1, len(params) - 1, 2):
+			query.append(dict([(params[index],params[index + 1])]))
+
+		#figure out data type the user is requesting
+		if params[0] == 'albums':
+			return json.dumps(self.queryAlbums(query))
+		if params[0] == 'artists':
+			return json.dumps(self.queryArtists(query))
+
+
 
 		#TODO: instead of a string, assemble an SQL query
 		str = u''
@@ -70,64 +86,71 @@ class API:
 		return str
 
 
-	@cherrypy.expose
-	def albums(self, filter=None):
-		"""Returns unique albums in our database, ordered by title_sort property.
-		If an integer filter is supplied, it must be the id of an album. If a string
-		filter is supplied, it must be a substring of the name of an album.
+	def queryAlbums(self, params):
+		"""Assembles an album query by appending query parameters as filters.
+		The result is a query that satisfies all of the parameters that were
+		passed on the url string.
+		Returns the results of the query sorted by title_sort property
 		"""
-		cherrypy.response.headers['Content-Type'] = 'application/json'
+		q = cherrypy.request.db.query(Album)
 
-		albums = []
-		if filter != None:
-			try:
-				albums.extend(cherrypy.request.db.query(Album).filter(Album.id == filter).order_by(Album.title_sort, Album.title).all())
-			except:
-				pass
+		for d in params:
+			key = d.keys()[0]
+			value = d[key]
 
-			# only attempt a name match if the id match failed - this prevents 12 from returning D12
-			if len(albums) == 0:
-				try:
-					albums.extend(cherrypy.request.db.query(Album).filter(Album.title.like('%' + filter + '%')).order_by(Album.title_sort, Album.title).all())
-				except:
-					pass
-		else:
-			albums.extend(cherrypy.request.db.query(Album).order_by(Album.title_sort, Album.title).all())
+			if key == 'id':
+				q = q.filter(Album.id == value)
+			elif key == 'title':
+				q = q.filter(Album.title.like('%' + value + '%'))
+			elif key == 'title_sort':
+				q = q.filter(Album.title_sort.like('%' + value + '%'))
+			elif key == 'artist_id':
+				q = q.filter(Album.artist_id == value)
+			elif key == 'asin':
+				q = q.filter(Album.asin.like('%' + value + '%'))
+			elif key == 'barcode':
+				q = q.filter(Album.barcode.like('%' + value + '%'))
+			elif key == 'compilation':
+				q = q.filter(Album.compilation == value)
+			elif key == 'media_type':
+				q = q.filter(Album.media_type.like('%' + value + '%'))
+			elif key == 'musicbrainz_albumid':
+				q = q.filter(Album.musicbrainz_albumid.like('%' + value + '%'))
+			elif key == 'musicbrainz_albumstatus':
+				q = q.filter(Album.musicbrainz_albumstatus.like('%' + value + '%'))
+			elif key == 'musicbrainz_albumtype':
+				q = q.filter(Album.musicbrainz_albumtype.like('%' + value + '%'))
+			elif key == 'organization':
+				q = q.filter(Album.organization.like('%' + value + '%'))
+			elif key == 'releasecountry':
+				q = q.filter(Album.releasecountry.like('%' + value + '%'))
 
 		album_list = []
-		for a in albums:
-			album_list.append(a.as_dict())
-		return json.dumps(album_list)
+	 	for a in q.order_by(Album.title_sort).all():
+	 		album_list.append(a.as_dict())
+		return album_list
 
 
-	@cherrypy.expose
-	def artists(self, filter=None):
-		"""Returns unique artists in our database, ordered by name_sort property.
-		If an integer filter is supplied, it must be the id of an artist. If a string
-		filter is supplied, it must be a substring of the name of an artist.
-		"""
-		cherrypy.response.headers['Content-Type'] = 'application/json'
+	def queryArtists(self, params):
+		q = cherrypy.request.db.query(Artist)
 
-		artists = []
-		if filter != None:
-			try:
-				artists.extend(cherrypy.request.db.query(Artist).filter(Artist.id == filter).order_by(Artist.name_sort, Artist.name).all())
-			except:
-				pass
+		for d in params:
+			key = d.keys()[0]
+			value = d[key]
 
-			# only attempt a name match if the id match failed - this prevents 12 from returning D12
-			if len(artists) == 0:
-				try:
-					artists.extend(cherrypy.request.db.query(Artist).filter(Artist.name.like('%' + filter + '%')).order_by(Artist.name_sort, Artist.name).all())
-				except:
-					pass
-		else:
-			artists.extend(cherrypy.request.db.query(Artist).order_by(Artist.name_sort, Artist.name).all())
+			if key == 'id':
+				q = q.filter(Artist.id == value)
+			elif key == 'name':
+				q = q.filter(Artist.name.like('%' + value + '%'))
+			elif key == 'name_sort':
+				q = q.filter(Artist.name_sort.like('%' + value + '%'))
+			elif key == 'musicbrainz_artistid':
+				q = q.filter(Artist.musicbrainz_artistid.like('%' + value + '%'))
 
 		artist_list = []
-		for a in artists:
-			artist_list.append(a.as_dict())
-		return json.dumps(artist_list)
+	 	for a in q.order_by(Artist.name_sort).all():
+	 		artist_list.append(a.as_dict())
+		return artist_list
 
 
 	@cherrypy.expose
