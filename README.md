@@ -59,7 +59,9 @@ python musik.py
 
 ##Using Foreman (Optional)
 
-Foreman comes prepackaged with the [Heroku Toolbelt](https://toolbelt.heroku.com/).  Install it.
+Foreman is a command-line tool for running Procfile-backed apps. It allows you to run your app easily with environment variables that do not affect the rest of your system.
+
+Install Foreman, it comes pre-packaged with the [Heroku Toolbelt](https://toolbelt.heroku.com/).
 
 Create a ```.env``` file in your project directory
 
