@@ -38,3 +38,9 @@ logs/
 
 #Temporary gedit files
 *.*~
+
+#Foreman
+.env
+
+#Sublime
+*.sublime-*
