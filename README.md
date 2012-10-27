@@ -57,6 +57,34 @@ export PORT=5000
 python musik.py
 ```
 
+##Using Foreman (Optional)
+
+Foreman is a command-line tool for running Procfile-backed apps. It allows you to run your app easily with environment variables that do not affect the rest of your system.
+
+Install Foreman, it comes pre-packaged with the [Heroku Toolbelt](https://toolbelt.heroku.com/).
+
+Create a ```.env``` file in your project directory
+
+``` bash
+cd musik
+touch .env
+```
+
+Add any environment variables you wish to your ```.env``` file, here is an example file.
+
+```
+PORT=5555
+SOME_VAR=blah-blah-blah
+```
+
+Start up the Musik server using foreman
+
+``` bash
+foreman start
+```
+
+Stop the Musik server when running in foreman by hitting ```ctrl-c```
+
 ##Contributing
 
 1. Fork this repo
