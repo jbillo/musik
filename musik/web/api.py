@@ -4,7 +4,7 @@ import os
 
 import cherrypy
 
-from musik.db import Album, Artist, ImportTask, Track
+from musik.db import Album, Artist, ImportTask, Track, Disc
 
 
 class Import:
@@ -66,24 +66,10 @@ class API:
 			return json.dumps(self.queryAlbums(query))
 		if params[0] == 'artists':
 			return json.dumps(self.queryArtists(query))
-
-
-
-		#TODO: instead of a string, assemble an SQL query
-		str = u''
-		for index in xrange(0, len(params), 2):
-			if regex.match(params[index]):
-				str += params[index] + u': '
-
-				if len(params) > (index + 1):
-					str += params[index + 1] + u'<br />'
-				else:
-			 		str += u'* <br />'
-	 		else:
-	 			str = u'Invalid Query'
-	 			break
-
-		return str
+		if params[0] == 'tracks':
+			return json.dumps(self.queryTracks(query))
+		if params[0] == 'discs':
+			return json.dumps(self.queryDiscs(query))
 
 
 	def queryAlbums(self, params):
@@ -131,7 +117,42 @@ class API:
 		return album_list
 
 
+	def queryDiscs(self, params):
+		"""Assembles an disc query by appending query parameters as filters.
+		The result is a query that satisfies all of the parameters that were
+		passed on the url string.
+		Returns the results of the query sorted by id property
+		TODO: sort by album
+		"""
+		q = cherrypy.request.db.query(Disc)
+
+		for d in params:
+			key = d.keys()[0]
+			value = d[key]
+
+			if key == 'id':
+				q = q.filter(Disc.id == value)
+			elif key == 'album_id':
+				q = q.filter(Disc.album_id == value)
+			elif key == 'discnumber':
+				q = q.filter(Disc.discnumber.like('%' + value + '%'))
+			elif key == 'disc_subtitle':
+				q = q.filter(Disc.disc_subtitle.like('%' + value + '%'))
+			elif key == 'musicbrainz_discid':
+				q = q.filter(Disc.musicbrainz_discid.like('%' + value + '%'))
+
+		disc_list = []
+	 	for d in q.order_by(Disc.id).all():
+	 		disc_list.append(d.as_dict())
+		return disc_list
+
+
 	def queryArtists(self, params):
+		"""Assembles an artist query by appending query parameters as filters.
+		The result is a query that satisfies all of the parameters that were
+		passed on the url string.
+		Returns the results of the query sorted by name_sort property
+		"""
 		q = cherrypy.request.db.query(Artist)
 
 		for d in params:
@@ -153,31 +174,82 @@ class API:
 		return artist_list
 
 
-	@cherrypy.expose
-	def tracks(self, filter=None):
-		"""Returns unique tracks in our database, ordered by title_sort property.
-		If an integer filter is supplied, it must be the id of a track. If a string
-		filter is supplied, it must be a substring of the title of a track.
+	def queryTracks(self, params):
+		"""Assembles an track query by appending query parameters as filters.
+		The result is a query that satisfies all of the parameters that were
+		passed on the url string.
+		Returns the results of the query sorted by title_sort property
 		"""
-		cherrypy.response.headers['Content-Type'] = 'application/json'
+		q = cherrypy.request.db.query(Track)
 
-		tracks = []
-		if filter != None:
-			try:
-				tracks.extend(cherrypy.request.db.query(Track).filter(Track.id == filter).order_by(Track.title_sort, Track.title).all())
-			except:
-				pass
+		for d in params:
+			key = d.keys()[0]
+			value = d[key]
 
-			# only attempt a name match if the id match failed - this prevents 12 from returning D12
-			if len(tracks) == 0:
-				try:
-					tracks.extend(cherrypy.request.db.query(Track).filter(Track.title.like('%' + filter + '%')).order_by(Track.title_sort, Track.title).all())
-				except:
-					pass
-		else:
-			tracks.extend(cherrypy.request.db.query(Track).order_by(Track.title_sort, Track.title).all())
+			if key == 'id':
+				q = q.filter(Track.id == value)
+			elif key == 'uri':
+				q = q.filter(Track.uri.like('%' + value + '%'))
+			elif key == 'artist_id':
+				q = q.filter(Track.artist_id == value)
+			elif key == 'album_id':
+				q = q.filter(Track.album_id == value)
+			elif key == 'album_artist_id':
+				q = q.filter(Track.album_artist_id == value)
+			elif key == 'arranger_id':
+				q = q.filter(Track.arranger_id == value)
+			elif key == 'author_id':
+				q = q.filter(Track.author_id == value)
+			elif key == 'bpm':
+				q = q.filter(Track.bpm == value)
+			elif key == 'composer_id':
+				q = q.filter(Track.composer_id == value)
+			elif key == 'conductor_id':
+				q = q.filter(Track.conductor_id == value)
+			elif key == 'copyright':
+				q = q.filter(Track.copyright.like('%' + value + '%'))
+			elif key == 'date':
+				q = q.filter(Track.date.like('%' + value + '%'))
+			elif key == 'disc_id':
+				q = q.filter(Track.disc_id == value)
+			elif key == 'encodedby':
+				q = q.filter(Track.encodedby.like('%' + value + '%'))
+			elif key == 'genre':
+				q = q.filter(Track.genre.like('%' + value + '%'))
+			elif key == 'isrc':
+				q = q.filter(Track.isrc.like('%' + value + '%'))
+			elif key == 'length':
+				q = q.filter(Track.length == value)
+			elif key == 'lyricist_id':
+				q = q.filter(Track.lyricist_id == value)
+			elif key == 'mood':
+				q = q.filter(Track.mood.like('%' + value + '%'))
+			elif key == 'musicbrainz_trackid':
+				q = q.filter(Track.musicbrainz_trackid.like('%' + value + '%'))
+			elif key == 'musicbrainz_trmid':
+				q = q.filter(Track.musicbrainz_trmid.like('%' + value + '%'))
+			elif key == 'musicip_fingerprint':
+				q = q.filter(Track.musicip_fingerprint.like('%' + value + '%'))
+			elif key == 'musicip_puid':
+				q = q.filter(Track.musicip_puid.like('%' + value + '%'))
+			elif key == 'performer_id':
+				q = q.filter(Track.performer_id == value)
+			elif key == 'title':
+				q = q.filter(Track.title.like('%' + value + '%'))
+			elif key == 'title_sort':
+				q = q.filter(Track.title_sort.like('%' + value + '%'))
+			elif key == 'tracknumber':
+				q = q.filter(Track.tracknumber == value)
+			elif key == 'subtitle':
+				q = q.filter(Track.subtitle.like('%' + value + '%'))
+			elif key == 'website':
+				q = q.filter(Track.website.like('%' + value + '%'))
+			elif key == 'playcount':
+				q = q.filter(Track.playcount == value)
+			elif key == 'rating':
+				q = q.filter(Track.rating == value)
 
 		track_list = []
-		for a in tracks:
+		for a in q.order_by(Track.title_sort).all():
 			track_list.append(a.as_dict())
-		return json.dumps(track_list)
+		return track_list
