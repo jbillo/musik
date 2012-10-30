@@ -47,3 +47,12 @@ div.validate-error {
 div.header {
 	background-color: gray;
 }
+
+div.songs .albumcover {
+	background-color: gray;
+	border: 1px solid black;
+	float: left;
+	height: 120px;
+	margin-right: 20px;
+	width: 120px;
+}
