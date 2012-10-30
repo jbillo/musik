@@ -107,15 +107,11 @@ class Musik:
 
 	@cherrypy.expose
 	def albums(self):
-		return self._render_page("albums.html", **{
-			"title": "Albums",
-		})
+		return self._render("albums.html")
 
 	@cherrypy.expose
 	def artists(self):
-		return self._render_page("artists.html", **{
-			"title": "Artists",
-		})
+		return self._render("artists.html")
 
 	@cherrypy.expose
 	def importmedia(self):
