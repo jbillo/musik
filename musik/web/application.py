@@ -102,7 +102,6 @@ class Musik:
 	def index(self):
 		return self._render_page("index.html", **{
 			"title": "Home",
-            "js_appends": ['index/artistalbumload.js'],
 		})
 
 	@cherrypy.expose
