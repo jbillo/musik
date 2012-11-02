@@ -1,25 +1,23 @@
-<script language="JavaScript">
-	$(document).ready(function() {
-		//load artists with an ajax call
-		//TODO: generate links to individual artist pages
-		$.get("/api/artists/", function(data){
-			var html = '<ul>'
-			for (var a in data) {
-				html += '<li>' + data[a]['name'] + '</li>'
-			}
-			html += '</ul>'
-			$('.artist-list').html(html);
-		}, "json");
-	});
-</script>
+			<script language="JavaScript">
+				$(document).ready(function() {
+					//load artists with an ajax call
+					//TODO: generate links to individual artist pages
+					$.get("/api/artists/", function(data){
+						var html = '<ul>'
+						for (var a in data) {
+							html += '<li>' + data[a]['name'] + '</li>'
+						}
+						html += '</ul>'
+						$('.artist-list').html(html);
+					}, "json");
+				});
+			</script>
 
-<div class="container_12">
-	<div class="grid_12 main">
-		<h2>Artists</h2>
+			<div class="grid_12 main">
+				<h2>Artists</h2>
 
-		<div class="artist-list">
-			<img src="/static/images/ajax-loader.gif" alt="loading..." />
-		</div>
-	</div>
-	<div class="clear"></div>
-</div>
+				<div class="artist-list">
+					<img src="/static/images/ajax-loader.gif" alt="loading..." />
+				</div>
+			</div>
+			<div class="clear"></div>
