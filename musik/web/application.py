@@ -112,26 +112,39 @@ class Musik:
 
 	@cherrypy.expose
 	def index(self):
+		"""Renders the index.html template along with
+		a page header and footer.
+		"""
 		return self._render_page("index.html", **{
 			"title": "Home",
 		})
 
 
 	@cherrypy.expose
+	def main(self):
+		"""Renders the index template without a header or footer.
+		"""
+		return self._render("index.html")
+
+
+	@cherrypy.expose
 	def albums(self):
+		"""Renders the albums template.
+		"""
 		return self._render("albums.html")
 
 
 	@cherrypy.expose
 	def artists(self):
+		"""Renders the artists template.
+		"""
 		return self._render("artists.html")
 
 
 	@cherrypy.expose
 	def importmedia(self):
-		return self._render_page("importmedia.html", **{
-			"title": "Import Media",
-			"js_appends": ['importmedia/validator.js'],
+		return self._render("importmedia.html", **{
+			"js_appends": ['importmedia.js'],
 		})
 
 

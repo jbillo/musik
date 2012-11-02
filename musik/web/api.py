@@ -10,14 +10,18 @@ from musik.db import Album, Artist, ImportTask, Track, Disc
 class Import:
 	@cherrypy.expose
 	def directory(self, path):
+		"""Queues the specified path for import into the media library.
+		"""
+		cherrypy.response.headers['Content-Type'] = 'application/json'
+
 		if not path or not os.path.isdir(path):
-			raise IOError(u"Path '%s' not found on filesystem" % path)
+			raise cherrypy.HTTPError("404 Not Found", "Couldn't find the path " + str(path) + " on the target system")
 
 		task = ImportTask(path)
 		cherrypy.request.db.add(task)
 
-		#TODO: return JSON instead of text
-		return u'Importing %s' % unicode(task.uri)
+		# this is an http 200 ok with no data
+		return json.dumps(None)
 
 	@cherrypy.expose
 	def status(self):
@@ -50,8 +54,7 @@ class API:
 
 	@cherrypy.expose
 	def default(self, *params):
-		#TODO: pull all available tags from the database so this regex is dynamic and allows any tag
-		#regex = re.compile('genre|artist|album|track')
+
 		cherrypy.response.headers['Content-Type'] = 'application/json'
 
 		#the first item in the url is the object that is being queried

@@ -12,25 +12,51 @@
 	<body>
 		<script type="application/javascript">
 			$(function() {
-				$("#artists_menu_button").click(function() {
-					alert("Artists was clicked!");
+
+				//wire up the home button to load that page into the main div
+				$("#home_menu_button").click(function() {
+					$.get('/main', function(data) {
+						$('#main').html(data)
+					});
 				});
+
+				//wire up the artists button to load that page into the main div
+				$("#artists_menu_button").click(function() {
+					$.get('/artists', function(data) {
+						$('#main').html(data)
+					});
+				});
+
+				//wire up the albums button to load that page into the main div
+				$("#albums_menu_button").click(function() {
+					$.get('/albums', function(data) {
+						$('#main').html(data)
+					});
+				});
+
+				//wire up the import media button to load that page into the main div
+				$("#import_menu_button").click(function() {
+					$.get('/importmedia', function(data) {
+						$('#main').html(data)
+					});
+				});
+
 			});
 		</script>
 
 		<!-- header menu -->
 		<div id="header" class="container_12 header">
-			<div class="grid_1">
+			<div id="home_menu_button" class="grid_1">
 				<!-- musik logo -->
-				<a href="/"><img src="/static/images/musik-60x46.png" /></a>
+				<img src="/static/images/musik-60x46.png" />
 			</div>
 			<div id="artists_menu_button" class="grid_2">
 				<!-- artists menu button -->
 				<p>Artists</p>
 			</div>
-			<div class="grid_2">
+			<div id="albums_menu_button" class="grid_2">
 				<!-- albums menu button -->
-				<a href="/albums"><p>Albums</p></a>
+				<p>Albums</p>
 			</div>
 			<div class="grid_3" style="width: 22.5208333333%;">
 				<!-- blank spacer -->
@@ -40,7 +66,7 @@
 				<!-- search bar -->
 				<p>Search</p>
 			</div>
-			<div class="grid_1">
+			<div id="import_menu_button" class="grid_1">
 				<!-- import media menu button -->
 				<p>Add Media</p>
 			</div>
