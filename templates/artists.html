@@ -1,14 +1,29 @@
 			<script language="JavaScript">
-				$(document).ready(function() {
+				$(document).ready(function() 
+				{
 					//load artists with an ajax call
 					//TODO: generate links to individual artist pages
-					$.get("/api/artists/", function(data){
-						var html = '<ul>'
-						for (var a in data) {
-							html += '<li>' + data[a]['name'] + '</li>'
+					$.get("/api/artists/", function(data)
+					{
+						
+						var html = '';
+
+						if ($.isEmptyObject(data)) 
+						{
+							html = 'There aren\'t any artists in your database!';
 						}
-						html += '</ul>'
+						else 
+						{
+							html = '<ul>';
+							for (var a in data) 
+							{
+								html += '<li>' + data[a]['name'] + '</li>';
+							}
+							html += '</ul>';
+						}
+
 						$('.artist-list').html(html);
+
 					}, "json");
 				});
 			</script>
