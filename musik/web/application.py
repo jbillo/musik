@@ -128,17 +128,21 @@ class Musik:
 
 
 	@cherrypy.expose
-	def albums(self):
+	def albums(self, id=None):
 		"""Renders the albums template.
 		"""
-		return self._render("albums.html")
+		return self._render("albums.html", **{
+				"js_appends": ['jquery.listnav.min-2.1.js'],
+			})
 
 
 	@cherrypy.expose
 	def artists(self):
 		"""Renders the artists template.
 		"""
-		return self._render("artists.html")
+		return self._render("artists.html", **{
+				"js_appends": ['jquery.listnav.min-2.1.js'],
+			})
 
 
 	@cherrypy.expose

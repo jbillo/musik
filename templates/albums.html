@@ -1,28 +1,65 @@
+		% for js_file in js_appends:
+			<script type="text/javascript" src="/static/js/${js_file}"></script>
+		% endfor
 			<script language="JavaScript">
 				$(document).ready(function() 
 				{
 					//load artists with an ajax call
-					//TODO: generate links to individual artist pages
 					$.get("/api/albums/", function(data)
 					{
-						
 						var html = '';
 
 						if ($.isEmptyObject(data)) 
 						{
-							html = 'There aren\'t any albums in your database!';
+							$('.list-container').html('<p>There aren\'t any albums in your database!</p>');
 						}
 						else 
 						{
-							html = '<ul>';
+							html += "<div id='list-nav'></div>";
+							html += "<ul id='list'>";
 							for (var a in data) 
 							{
-								html += '<li>' + data[a]['title'] + '</li>';
+								//TODO: make this a template?
+								//TODO: add artist images here as well
+								html += "<li class='item'>";
+								html += "<a href='#' class='" + data[a]['id'] + "'>";
+								html += data[a]['title'];
+								html += '</a></li>';
 							}
 							html += '</ul>';
+
+							$('.list-container').html(html);
+
+							//make link redirect to album summary page
+							//TODO: modify the template to actually support this functionality
+							$('.list-container #list li.item a').click(function() {
+								var myClass = $(this).attr("class");
+								$.get('/albums/' + myClass, function(data) {
+									$('#main').html(data)
+								});
+								return false;
+							});
+
+							//once the list is loaded, make it pretty
+							$('.list-container ul#list').listnav({
+
+								//don't include an all tab
+								includeAll: false,
+
+								//do include an other tab (for stupid names that start with a unicode char)
+								includeOther: true,
+
+								//don't show the counts because they'll be huge
+								showCounts: false,
+
+								//filter prefixes so 'the beatles' appears under both t and b
+								prefixes: ['the', 'a'],
+							});
 						}
 
-						$('.album-list').html(html);
+						//show the results 
+						$('.loading').hide();
+						$('.list-container').slideDown('slow');
 
 					}, "json");
 				});
@@ -31,8 +68,7 @@
 			<div class="grid_12 main">
 				<h2>Albums</h2>
 
-				<div class="album-list">
-					<img src="/static/images/ajax-loader.gif" alt="loading..." />
-				</div>
+				<img class="loading" src="/static/images/ajax-loader.gif" alt="loading..." />
+				<div class="list-container" style="display: none;"></div>
 			</div>
 			<div class="clear"></div>
