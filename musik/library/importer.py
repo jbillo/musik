@@ -6,6 +6,7 @@ import threading
 import time
 
 from mutagen.easyid3 import EasyID3
+from mutagen.id3 import ID3NoHeaderError
 from mutagen.mp3 import MP3
 
 from sqlalchemy.exc import OperationalError
@@ -154,8 +155,13 @@ class ImportThread(threading.Thread):
 		else:
 			self.log.info(u'Track with uri %s is already in the library. Updating metadata...')
 
-		# get id3 data from the file
-		easyid3 = EasyID3(uri)
+		try:
+			# get id3 data from the file
+			easyid3 = EasyID3(uri)
+		except ID3NoHeaderError as nhe:
+			self.log.error(u'Cannot read ID3 data from %s. It cannot be added to the library at this time.' % uri)
+			self.log.error(u'Exception message: %s' % unicode(nhe))
+			return False
 
 		metadata = EasygoingDictionary()
 		for key in easyid3.keys():
@@ -461,9 +467,12 @@ class ImportThread(threading.Thread):
 				if track.artist == None:
 					track.artist = artist
 					track.album_artist = artist
-					sa_session.add(artist)
+					self.sa_session.add(artist)
 
 		self.log.info(u'Added track %s to the current session.', track)
+
+		#commit the transaction
+		self.sa_session.commit()
 
 
 	def findArtist(self, name=None, name_sort=None, musicbrainz_id=None):
