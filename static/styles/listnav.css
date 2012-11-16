@@ -1,68 +1,73 @@
 /*
- * This file provides style rules for any pages that use the jquery.listnav plugin to display pretty alphabetically-tabbed lists
+ * This file provides style rules for any pages that use the jquery.listnav
+ * plugin to display pretty alphabetically-tabbed lists
  */
-.listNav 
-{ 
-	margin:0 0 10px; 
-}
 
-.ln-letters 
-{ 
-	overflow:hidden; 
+ /* the header bar */
+.listNav
+{
+	margin:0 0 10px;
 }
-
-.ln-letters a 
-{ 
-	font-size:0.9em; 
-	display:block; 
-	float:left; 
-	padding:2px 6px; 
-	border:1px solid silver; 
-	border-right:none; 
-	text-decoration:none; 
+.ln-letters
+{
+	overflow:hidden;
 }
-
-.ln-letters a.ln-last 
-{ 
-	border-right:1px solid silver; 
+.ln-letters a
+{
+	font-size:1.5em;
+	display:block;
+	float:left;
+	padding:2px 6px;
+	border:1px solid silver;
+	border-bottom:none;
+	border-right:none;
+	text-decoration:none;
 }
-
+.ln-letters a.ln-last
+{
+	border-right:1px solid silver;
+}
 .ln-letters a:hover,
-.ln-letters a.ln-selected 
-{ 
-	background-color:#eaeaea; 
+.ln-letters a.ln-selected
+{
+	background-color:#eaeaea;
+}
+.ln-letters a.ln-disabled
+{
+	color:#ccc;
+}
+.ln-letter-count
+{
+	text-align:center;
+	font-size:0.8em;
+	line-height:1;
+	margin-bottom:3px;
+	color:#336699;
 }
 
-.ln-letters a.ln-disabled 
-{ 
-	color:#ccc; 
+/* the list elements */
+.list-container ul#list
+{
+	margin:0px;
+	padding:0px;
 }
-
-.ln-letter-count 
-{ 
-	text-align:center; 
-	font-size:0.8em; 
-	line-height:1; 
-	margin-bottom:3px; 
-	color:#336699; 
-}
-
-
 .list-container ul#list li.item
-{ 
-	list-style: none;
+{
+	border:1px solid silver;
+	display:block;
+	list-style-type: none;
+	margin-bottom:10px;
 }
-.list-container ul#list li.item a 
-{ 
-	display:block; 
-	text-align:center; 
-	width:300px; 
-	border:1px solid silver; 
-	padding:10px; 
-	margin:0 10px 10px 0; 
-	text-decoration:none 
+.list-container ul#list li.item .album-details
+{
+	float: left;
 }
-.list-container ul#list li.item a:hover 
-{ 
-	background-color:#eee 
+.list-container ul#list li.item .album-details a
+{
+	text-align:left;
+	text-decoration:none;
+}
+.list-container ul#list li.item:hover
+{
+	background-color:#eaeaea;
 }

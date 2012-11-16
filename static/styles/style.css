@@ -48,11 +48,11 @@ div.header {
 	background-color: gray;
 }
 
-div.songs .albumcover {
+div.album-cover {
 	background-color: gray;
 	border: 1px solid black;
 	float: left;
 	height: 120px;
-	margin-right: 20px;
+	margin: 10px;
 	width: 120px;
 }

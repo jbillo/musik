@@ -87,7 +87,7 @@ class Musik:
 			log.error(u'_api_request to url %s returned an unsupported content-type %s' % (url, r.headers['content-type']))
 			return False
 
-		return json.load(r.content)
+		return json.loads(r.content)
 
 
 	def _render(self, template_names, **kwargs):
@@ -163,9 +163,13 @@ class Musik:
 		else:
 			self.log.info(u'albums was called with id %d' % int(id))
 
-		return self._render("albums.html", **{
-				"js_appends": ['jquery.listnav.min-2.1.js'],
-			})
+		#TODO: make this url configurable!
+		#TODO: error messages are good too
+		albums = self._api_request('http://localhost:8080/api/albums/')
+		if albums:
+			return self._render("albums.html", **{
+					"albums": albums,
+				})
 
 
 	@cherrypy.expose

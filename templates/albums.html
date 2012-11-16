@@ -1,74 +1,56 @@
-		% for js_file in js_appends:
-			<script type="text/javascript" src="/static/js/${js_file}"></script>
-		% endfor
 			<script language="JavaScript">
-				$(document).ready(function() 
+				$(document).ready(function()
 				{
-					//load artists with an ajax call
-					$.get("/api/albums/", function(data)
-					{
-						var html = '';
+					//make link redirect to album summary page
+					//TODO: modify the template to actually support this functionality
+					$('.list-container #list li.item a').click(function() {
+						var myClass = $(this).attr("class");
+						$.get('/albums/' + myClass, function(data) {
+							$('#main').html(data)
+						});
+						return false;
+					});
 
-						if ($.isEmptyObject(data)) 
-						{
-							$('.list-container').html('<p>There aren\'t any albums in your database!</p>');
-						}
-						else 
-						{
-							html += "<div id='list-nav'></div>";
-							html += "<ul id='list'>";
-							for (var a in data) 
-							{
-								//TODO: make this a template?
-								//TODO: add artist images here as well
-								html += "<li class='item'>";
-								html += "<a href='#' class='" + data[a]['id'] + "'>";
-								html += data[a]['title'];
-								html += '</a></li>';
-							}
-							html += '</ul>';
 
-							$('.list-container').html(html);
+					//once the list is loaded, make it pretty
+					$('.list-container ul#list').listnav({
 
-							//make link redirect to album summary page
-							//TODO: modify the template to actually support this functionality
-							$('.list-container #list li.item a').click(function() {
-								var myClass = $(this).attr("class");
-								$.get('/albums/' + myClass, function(data) {
-									$('#main').html(data)
-								});
-								return false;
-							});
+						//don't include an all tab
+						includeAll: false,
 
-							//once the list is loaded, make it pretty
-							$('.list-container ul#list').listnav({
+						//do include an other tab (for stupid names that start with a unicode char)
+						includeOther: true,
 
-								//don't include an all tab
-								includeAll: false,
+						//don't show the counts because they'll be huge
+						showCounts: false,
 
-								//do include an other tab (for stupid names that start with a unicode char)
-								includeOther: true,
+						//filter prefixes so 'the beatles' appears under both t and b
+						prefixes: ['the', 'a'],
+					});
 
-								//don't show the counts because they'll be huge
-								showCounts: false,
 
-								//filter prefixes so 'the beatles' appears under both t and b
-								prefixes: ['the', 'a'],
-							});
-						}
-
-						//show the results 
-						$('.loading').hide();
-						$('.list-container').slideDown('slow');
-
-					}, "json");
+					//show the results
+					$('.list-container').slideDown('slow');
 				});
 			</script>
 
 			<div class="grid_12 main">
 				<h2>Albums</h2>
 
-				<img class="loading" src="/static/images/ajax-loader.gif" alt="loading..." />
-				<div class="list-container" style="display: none;"></div>
+				<div class="list-container" style="display:none;">
+					<div id='list-nav' class='grid_11'></div>
+					<ul id='list'>
+					% for album in albums:
+						<li class='grid_11 item'>
+							<div class="album-cover">&nbsp;</div>
+							<div class="album-details">
+								<a href='#' class='${album['id']}'><h3>${album['title']}</h3></a>
+								<p>artist name</p>
+								<p>number of tracks</p>
+							</div>
+						</li>
+					% endfor
+					</ul>
+				</div>
 			</div>
 			<div class="clear"></div>
