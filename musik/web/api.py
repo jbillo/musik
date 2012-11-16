@@ -4,6 +4,7 @@ import os
 
 import cherrypy
 
+from musik import initLogging
 from musik.db import Album, Artist, ImportTask, Track, Disc
 
 
@@ -50,7 +51,12 @@ class Import:
 # these pairs are assembled into an SQL query. Each term is combined with the AND operator.
 # unknown <tag> elements are ignored.
 class API:
+	log = None
 	importmedia = Import()
+
+	def __init__(self):
+		self.log = initLogging(__name__)
+
 
 	@cherrypy.expose
 	def default(self, *params):
@@ -81,6 +87,8 @@ class API:
 		passed on the url string.
 		Returns the results of the query sorted by title_sort property
 		"""
+		self.log.info(u'queryAlbums called with params %s' % unicode(params))
+
 		q = cherrypy.request.db.query(Album)
 
 		for d in params:
@@ -127,6 +135,8 @@ class API:
 		Returns the results of the query sorted by id property
 		TODO: sort by album
 		"""
+		self.log.info(u'queryDiscs called with params %s' % unicode(params))
+
 		q = cherrypy.request.db.query(Disc)
 
 		for d in params:
@@ -156,6 +166,8 @@ class API:
 		passed on the url string.
 		Returns the results of the query sorted by name_sort property
 		"""
+		self.log.info(u'queryArtists called with params %s' % unicode(params))
+
 		q = cherrypy.request.db.query(Artist)
 
 		for d in params:
@@ -183,6 +195,8 @@ class API:
 		passed on the url string.
 		Returns the results of the query sorted by title_sort property
 		"""
+		self.log.info(u'queryTracks called with params %s' % unicode(params))
+
 		q = cherrypy.request.db.query(Track)
 
 		for d in params:

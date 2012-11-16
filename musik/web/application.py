@@ -1,3 +1,4 @@
+import json
 import sys
 import os
 
@@ -7,8 +8,11 @@ from cherrypy.process import wspbus, plugins
 from mako.template import Template
 from mako.lookup import TemplateLookup
 
+import requests
+
 from sqlalchemy.orm import scoped_session, sessionmaker
 
+from musik import initLogging
 from musik.db import DatabaseWrapper
 from musik.web import api
 
@@ -64,7 +68,26 @@ class SATool(cherrypy.Tool):
 
 # defines the web application that is the default client
 class Musik:
+	log = None
 	api = api.API()
+
+	def __init__(self):
+		self.log = initLogging(__name__)
+
+
+	def _api_request(self, url):
+		self.log.info(u'_api_request was called with url %s' % url)
+
+		r = requests.get(url)
+
+		if r.status_code != 200:
+			log.error(u'_api_request to url %s returned status code %d' % (url, int(r.status_code)))
+			return False
+		elif r.headers['content-type'] != 'application/json':
+			log.error(u'_api_request to url %s returned an unsupported content-type %s' % (url, r.headers['content-type']))
+			return False
+
+		return json.load(r.content)
 
 
 	def _render(self, template_names, **kwargs):
@@ -115,6 +138,8 @@ class Musik:
 		"""Renders the index.html template along with
 		a page header and footer.
 		"""
+		self.log.info(u'index was called')
+
 		return self._render_page("index.html", **{
 			"title": "Home",
 		})
@@ -124,6 +149,8 @@ class Musik:
 	def main(self):
 		"""Renders the index template without a header or footer.
 		"""
+		self.log.info(u'main was called')
+
 		return self._render("index.html")
 
 
@@ -131,15 +158,25 @@ class Musik:
 	def albums(self, id=None):
 		"""Renders the albums template.
 		"""
+		if id == None:
+			self.log.info(u'albums was called with no id')
+		else:
+			self.log.info(u'albums was called with id %d' % int(id))
+
 		return self._render("albums.html", **{
 				"js_appends": ['jquery.listnav.min-2.1.js'],
 			})
 
 
 	@cherrypy.expose
-	def artists(self):
+	def artists(self, id=None):
 		"""Renders the artists template.
 		"""
+		if id == None:
+			self.log.info(u'artists was called with no id')
+		else:
+			self.log.info(u'artists was called with id %d' % int(id))
+
 		return self._render("artists.html", **{
 				"js_appends": ['jquery.listnav.min-2.1.js'],
 			})
@@ -147,6 +184,8 @@ class Musik:
 
 	@cherrypy.expose
 	def importmedia(self):
+		self.log.info(u'importmedia was called')
+
 		return self._render("importmedia.html", **{
 			"js_appends": ['importmedia.js'],
 		})
@@ -154,10 +193,11 @@ class Musik:
 
 # starts the web app. this call will block until the server goes down
 class MusikWebApplication:
-	log = threads = None
+	log = None
+	threads = None
 
-	def __init__(self, log, threads):
-		self.log = log
+	def __init__(self, threads):
+		self.log = initLogging(__name__)
 		self.threads = threads
 
 		# Subscribe specifically to the 'stop' method passed by cherrypy.
