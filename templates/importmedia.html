@@ -2,23 +2,21 @@
 			<script type="text/javascript" src="/static/js/${js_file}"></script>
 		% endfor
 
-			<div class="grid_12">
-				<h1>Musik Media Importer</h1>
-				<p>From this page, you can import all of your precious media files into the musik database. Start by entering a directory below:</p>
+			<h1>Musik Media Importer</h1>
+			<p>From this page, you can import all of your precious media files into the musik database. Start by entering a directory below:</p>
 
-				<div class="validate-error" id="validate-error-top"></div>
+			<div class="validate-error" id="validate-error-top"></div>
 
-				<form id="importmedia-form" class="importfolder">
-					<fieldset>
-						<legend>Enter the path to a directory below:&nbsp;</legend>
-						<ol>
-							<li>
-								<label for="path">Path<em>*</em></label>
-								<input id="path" name="path" type="text">
-								<input type="submit" value="Submit" />
-							</li>
-						</ol>
-					</fieldset>
-				</form>
-			</div>
-			<div class="clear"></div>
+			<form id="importmedia-form" class="importfolder">
+				<fieldset>
+					<legend>Enter the path to a directory below:&nbsp;</legend>
+					<ol>
+						<li>
+							<label for="path">Path<em>*</em></label>
+							<input id="path" name="path" type="text">
+							<input type="submit" value="Submit" />
+						</li>
+					</ol>
+				</fieldset>
+			</form>
+

@@ -38,17 +38,24 @@ div.validate-error {
 	margin-bottom: 10px;
 }
 
-.grid_6 img {
-	display: block;
-	margin-right: auto;
-	margin-left: auto;
-}
-
-div.header {
+div#header {
 	background-color: gray;
+	padding:10px;
 }
 
-div.album-cover {
+div#header .button
+{
+	float: left;
+	width: 200px;
+}
+
+div#sidebar {
+	border-right: 1px solid gray;
+	height: 200px;
+	width: 219px;
+}
+
+div.image-120x120 {
 	background-color: gray;
 	border: 1px solid black;
 	float: left;

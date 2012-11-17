@@ -14,12 +14,11 @@
 }
 .ln-letters a
 {
-	font-size:1.5em;
+	font-size:1em;
 	display:block;
 	float:left;
 	padding:2px 6px;
 	border:1px solid silver;
-	border-bottom:none;
 	border-right:none;
 	text-decoration:none;
 }
@@ -36,14 +35,7 @@
 {
 	color:#ccc;
 }
-.ln-letter-count
-{
-	text-align:center;
-	font-size:0.8em;
-	line-height:1;
-	margin-bottom:3px;
-	color:#336699;
-}
+
 
 /* the list elements */
 .list-container ul#list
@@ -53,10 +45,12 @@
 }
 .list-container ul#list li.item
 {
-	border:1px solid silver;
-	display:block;
+	border: 1px solid silver;
+	display: block;
 	list-style-type: none;
-	margin-bottom:10px;
+	margin-top: 10px;
+	overflow: hidden;
+	width: 600px;
 }
 .list-container ul#list li.item .album-details
 {
