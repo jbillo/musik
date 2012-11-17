@@ -5,9 +5,7 @@
 					//TODO: modify the template to actually support this functionality
 					$('.list-container #list li.item a').click(function() {
 						var myClass = $(this).attr("class");
-						$.get('/artists/' + myClass, function(data) {
-							$('#main').html(data)
-						});
+						load_content('/artists/' + myClass);
 						return false;
 					});
 
@@ -26,7 +24,6 @@
 						//filter prefixes so 'the beatles' appears under both t and b
 						prefixes: ['the', 'a'],
 					});
-
 
 					//show the results
 					$('.list-container').slideDown('slow');
