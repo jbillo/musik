@@ -181,9 +181,11 @@ class Musik:
 		else:
 			self.log.info(u'artists was called with id %d' % int(id))
 
-		return self._render("artists.html", **{
-				"js_appends": ['jquery.listnav.min-2.1.js'],
-			})
+		artists = self._api_request('http://localhost:8080/api/artists/')
+		if artists:
+			return self._render("artists.html", **{
+					"artists": artists,
+				})
 
 
 	@cherrypy.expose

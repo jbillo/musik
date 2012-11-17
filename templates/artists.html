@@ -1,38 +1,55 @@
 			<script language="JavaScript">
-				$(document).ready(function() 
+				$(document).ready(function()
 				{
-					//load artists with an ajax call
-					//TODO: generate links to individual artist pages
-					$.get("/api/artists/", function(data)
-					{
-						
-						var html = '';
+					//make link redirect to artist summary page
+					//TODO: modify the template to actually support this functionality
+					$('.list-container #list li.item a').click(function() {
+						var myClass = $(this).attr("class");
+						$.get('/artists/' + myClass, function(data) {
+							$('#main').html(data)
+						});
+						return false;
+					});
 
-						if ($.isEmptyObject(data)) 
-						{
-							html = 'There aren\'t any artists in your database!';
-						}
-						else 
-						{
-							html = '<ul>';
-							for (var a in data) 
-							{
-								html += '<li>' + data[a]['name'] + '</li>';
-							}
-							html += '</ul>';
-						}
+					//once the list is loaded, make it pretty
+					$('.list-container ul#list').listnav({
 
-						$('.artist-list').html(html);
+						//don't include an all tab
+						includeAll: false,
 
-					}, "json");
+						//do include an other tab (for stupid names that start with a unicode char)
+						includeOther: true,
+
+						//don't show the counts because they'll be huge
+						showCounts: false,
+
+						//filter prefixes so 'the beatles' appears under both t and b
+						prefixes: ['the', 'a'],
+					});
+
+
+					//show the results
+					$('.list-container').slideDown('slow');
 				});
 			</script>
 
 			<div class="grid_12 main">
 				<h2>Artists</h2>
 
-				<div class="artist-list">
-					<img src="/static/images/ajax-loader.gif" alt="loading..." />
+				<div class="list-container" style="display:none;">
+					<div id='list-nav' class='grid_11'></div>
+					<ul id='list'>
+					% for artist in artists:
+						<li class='grid_11 item'>
+							<div class="album-cover">&nbsp;</div>
+							<div class="album-details">
+								<a href='#' class='${artist['id']}'><h3>${artist['name']}</h3></a>
+								<p>list of albums</p>
+								<p>list of tracks</p>
+							</div>
+						</li>
+					% endfor
+					</ul>
 				</div>
 			</div>
 			<div class="clear"></div>
