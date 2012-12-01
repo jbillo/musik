@@ -5,6 +5,7 @@ import os
 import cherrypy
 
 from musik import initLogging
+from musik.web import streaming
 from musik.db import Album, Artist, ImportTask, Track, Disc
 
 
@@ -47,12 +48,34 @@ class Import:
 		return ret
 
 
+class OggStream:
+	log = None
+
+	def __init__(self):
+		self.log = initLogging(__name__)
+
+	@cherrypy.expose
+	def track(self, id):
+		cherrypy.response.headers['Content-Type'] = 'audio/x-wav'
+		def yield_data():
+			with streaming.GstAudioFile('/home/jfritz/Music/test.mp3') as f:
+				print f.samplerate
+				print f.channels
+				print f.duration
+				for block in f:
+					print block
+					yield block
+		return yield_data()
+	track._cp_config = {'response.stream': True}
+
+
 # defines an api with a dynamic url scheme composed of /<tag>/<value>/ pairs
 # these pairs are assembled into an SQL query. Each term is combined with the AND operator.
 # unknown <tag> elements are ignored.
 class API:
 	log = None
 	importmedia = Import()
+	stream = OggStream()
 
 	def __init__(self):
 		self.log = initLogging(__name__)
