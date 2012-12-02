@@ -141,6 +141,8 @@ class GstAudioFile(object):
         self.pipeline = gst.Pipeline()
         self.dec = gst.element_factory_make("uridecodebin")
         self.conv = gst.element_factory_make("audioconvert")
+        self.enc = gst.element_factory_make("vorbisenc")
+        self.mux = gst.element_factory_make("oggmux")
         self.sink = gst.element_factory_make('appsink')
 
         # Register for bus signals.
@@ -149,20 +151,24 @@ class GstAudioFile(object):
         bus.connect("message::eos", self._message)
         bus.connect("message::error", self._message)
 
-        # Configure the input.
+        # Configure the input/decoding stage.
+        # TODO: be smarter about this to allow other protocols
         uri = 'file://' + urllib.quote(path)
         self.dec.set_property("uri", uri)
+
         # The callback to connect the input.
         self.dec.connect("pad-added", self._pad_added)
         self.dec.connect("no-more-pads", self._no_more_pads)
+
         # And a callback if decoding failes.
         self.dec.connect("unknown-type", self._unkown_type)
 
         # Configure the output.
         # We want short integer data.
-        self.sink.set_property('caps',
-            gst.Caps('audio/x-raw-int, width=16, depth=16, signed=true')
-        )
+        #self.sink.set_property('caps',
+        #    gst.Caps('audio/ogg')
+        #)
+
         # TODO set endianness?
         # Set up the characteristics of the output. We don't want to
         # drop any data (nothing is real-time here); we should bound
@@ -188,8 +194,10 @@ class GstAudioFile(object):
 
         # Link up everything but the decoder (which must be linked only
         # when it becomes ready).
-        self.pipeline.add(self.dec, self.conv, self.sink)
-        self.conv.link(self.sink)
+        self.pipeline.add(self.dec, self.conv, self.enc, self.mux, self.sink)
+        self.conv.link(self.enc)
+        self.enc.link(self.mux)
+        self.mux.link(self.sink)
 
         # Set up the queue for data and run the main thread.
         self.queue = Queue.Queue(QUEUE_SIZE)
@@ -217,8 +225,8 @@ class GstAudioFile(object):
         info = pad.get_negotiated_caps()[0]
 
         # Stream attributes.
-        self.channels = info['channels']
-        self.samplerate = info['rate']
+        self.channels = 0 #info['channels']
+        self.samplerate = 0 #info['rate']
 
         # Query duration.
         q = gst.query_new_duration(gst.FORMAT_TIME)

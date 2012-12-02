@@ -56,14 +56,13 @@ class OggStream:
 
 	@cherrypy.expose
 	def track(self, id):
-		cherrypy.response.headers['Content-Type'] = 'audio/x-wav'
+		cherrypy.response.headers['Content-Type'] = 'audio/ogg'
 		def yield_data():
 			with streaming.GstAudioFile('/home/jfritz/Music/test.mp3') as f:
 				print f.samplerate
 				print f.channels
 				print f.duration
 				for block in f:
-					print block
 					yield block
 		return yield_data()
 	track._cp_config = {'response.stream': True}
