@@ -50,20 +50,32 @@ class Import:
 
 class OggStream:
 	log = None
+	stream = None
 
 	def __init__(self):
 		self.log = initLogging(__name__)
 
+
 	@cherrypy.expose
 	def track(self, id):
+		self.log.info(u'OggStream.track called with id %s' % unicode(id))
 		cherrypy.response.headers['Content-Type'] = 'audio/ogg'
+
 		def yield_data():
-			with streaming.GstAudioFile('/home/jfritz/Music/test.mp3') as f:
-				print f.samplerate
-				print f.channels
-				print f.duration
-				for block in f:
+			try:
+				path = '/home/jfritz/Music/test.mp3'
+				self.log.info(u'OggStream.track trying to open %s for streaming' % unicode(path))
+				self.stream = streaming.GstAudioFile(path)
+
+				self.log.info(u'OggStream.track started streaming %s' % unicode(path))
+				for block in self.stream:
 					yield block
+			finally:
+				self.log.info(u'OggStream.track streaming is complete. Closing stream.')
+				if self.stream is not None:
+					self.stream.close()
+					self.stream = None
+
 		return yield_data()
 	track._cp_config = {'response.stream': True}
 
