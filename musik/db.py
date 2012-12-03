@@ -215,7 +215,12 @@ class Track(Base):
 
 	def as_dict(self):
 		"""Returns a representation of the track as a dictionary"""
-		return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+		fields = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+		#TODO: don't hardcode the url!
+		fields['stream_uri'] = 'http://localhost:8080/api/stream/track/' + str(fields['id'])
+
+		return fields
 
 
 # Loosely wraps the SQLAlchemy database types and access methods.

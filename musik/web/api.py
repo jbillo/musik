@@ -55,19 +55,24 @@ class OggStream:
 	def __init__(self):
 		self.log = initLogging(__name__)
 
-
 	@cherrypy.expose
 	def track(self, id):
+		"""Transcodes the track with the specified unique id to ogg vorbis and
+		streams it to the client. Streaming begins immediately, even if the
+		entire file has not yet been transcoded."""
+
+		# look up the track in the database
 		self.log.info(u'OggStream.track called with id %s' % unicode(id))
+		uri = cherrypy.request.db.query(Track).filter(Track.id == id).first().uri
+
 		cherrypy.response.headers['Content-Type'] = 'audio/ogg'
 
 		def yield_data():
 			try:
-				path = '/home/jfritz/Music/test.mp3'
-				self.log.info(u'OggStream.track trying to open %s for streaming' % unicode(path))
-				self.stream = streaming.GstAudioFile(path)
+				self.log.info(u'OggStream.track trying to open %s for streaming' % unicode(uri))
+				self.stream = streaming.GstAudioFile(uri)
 
-				self.log.info(u'OggStream.track started streaming %s' % unicode(path))
+				self.log.info(u'OggStream.track started streaming %s' % unicode(uri))
 				for block in self.stream:
 					yield block
 			finally:

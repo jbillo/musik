@@ -160,25 +160,23 @@ class GstAudioFile(object):
 
         # Configure the input/decoding stage.
         # TODO: be smarter about this to allow other protocols
-        uri = 'file://' + urllib.quote(path)
+        print "path is %s" % path
+        uri = urllib.quote(path)
+        print "uri-encoded path is %s" % uri
+        uri = 'file://' + uri
+        print "protocol-prefixed path is %s" % uri
+
         self.dec.set_property("uri", uri)
 
         # The callback to connect the input.
         self.dec.connect("pad-added", self._pad_added)
         self.dec.connect("no-more-pads", self._no_more_pads)
 
-        # And a callback if decoding failes.
+        # And a callback if decoding fails.
         self.dec.connect("unknown-type", self._unkown_type)
 
         self.log.info("decoder configured")
 
-        # Configure the output.
-        # We want short integer data.
-        #self.sink.set_property('caps',
-        #    gst.Caps('audio/ogg')
-        #)
-
-        # TODO set endianness?
         # Set up the characteristics of the output. We don't want to
         # drop any data (nothing is real-time here); we should bound
         # the memory usage of the internal queue; and, most
