@@ -142,7 +142,8 @@ class GstAudioFile(object):
 
         # Set up the Gstreamer pipeline.
         self.pipeline = gst.Pipeline()
-        self.dec = gst.element_factory_make("uridecodebin")
+        self.src = gst.element_factory_make("filesrc")
+        self.dec = gst.element_factory_make("decodebin2")
         self.conv = gst.element_factory_make("audioconvert")
         self.enc = gst.element_factory_make("vorbisenc")
         self.mux = gst.element_factory_make("oggmux")
@@ -159,14 +160,8 @@ class GstAudioFile(object):
         self.log.info("bus connected")
 
         # Configure the input/decoding stage.
-        # TODO: be smarter about this to allow other protocols
         print "path is %s" % path
-        uri = urllib.quote(path)
-        print "uri-encoded path is %s" % uri
-        uri = 'file://' + uri
-        print "protocol-prefixed path is %s" % uri
-
-        self.dec.set_property("uri", uri)
+        self.src.set_property("location", path)
 
         # The callback to connect the input.
         self.dec.connect("pad-added", self._pad_added)
@@ -204,7 +199,8 @@ class GstAudioFile(object):
 
         # Link up everything but the decoder (which must be linked only
         # when it becomes ready).
-        self.pipeline.add(self.dec, self.conv, self.enc, self.mux, self.sink)
+        self.pipeline.add(self.src, self.dec, self.conv, self.enc, self.mux, self.sink)
+        self.src.link(self.dec)
         self.conv.link(self.enc)
         self.enc.link(self.mux)
         self.mux.link(self.sink)
@@ -334,8 +330,6 @@ class GstAudioFile(object):
             self.running = False
             self.finished = True
 
-            # Stop reading the file.
-            self.dec.set_property("uri", None)
             # Block spurious signals.
             self.sink.get_pad("sink").disconnect(self.caps_handler)
 
