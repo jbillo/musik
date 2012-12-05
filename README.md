@@ -5,6 +5,7 @@ A web-based streaming media library and player. Run Musik on your home server to
 ##Getting Started
 
 Prerequisites:
+- Python 2.7 (although Python 2.6 should work without issue)
 - [Pip](http://www.pip-installer.org/en/latest/)
 - [Virtualenv](http://pypi.python.org/pypi/virtualenv)
 - [Virtualenvwrapper](http://www.doughellmann.com/projects/virtualenvwrapper/) (optional)
@@ -24,17 +25,17 @@ Set up a virtual environment using virtualenv (or virtualenvwrapper)
 virtualenv musik-venv --distribute
 
 #virtualenvwrapper
-mkvirtualenv music-venv
+mkvirtualenv musik-venv
 ```
 
 Activate the virtual environment
 
 ``` bash
 #virtualenv
-source music-venv/bin/activate
+source musik-venv/bin/activate
 
 #virtualenvwrapper
-workon music-venv
+workon musik-venv
 ```
 
 Install dependencies from your distribution's package manager
