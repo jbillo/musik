@@ -3,9 +3,8 @@ import sys
 import os
 
 import cherrypy
-from cherrypy.process import wspbus, plugins
+from cherrypy.process import plugins
 
-from mako.template import Template
 from mako.lookup import TemplateLookup
 
 import requests
@@ -41,6 +40,7 @@ class SAEnginePlugin(plugins.SimplePlugin):
 	def bind(self, session):
 		session.configure(bind=self.sa_engine)
 
+
 # A tool to help SQLAlchemy correctly dole out and clean up db connections
 # See http://www.defuze.org/archives/222-integrating-sqlalchemy-into-a-cherrypy-application.html
 class SATool(cherrypy.Tool):
@@ -66,6 +66,7 @@ class SATool(cherrypy.Tool):
 		finally:
 			self.session.remove()
 
+
 # defines the web application that is the default client
 class Musik:
 	log = None
@@ -74,27 +75,25 @@ class Musik:
 	def __init__(self):
 		self.log = initLogging(__name__)
 
-
 	def _api_request(self, url):
 		self.log.info(u'_api_request was called with url %s' % url)
 
 		r = requests.get(url)
 
 		if r.status_code != 200:
-			log.error(u'_api_request to url %s returned status code %d' % (url, int(r.status_code)))
+			self.log.error(u'_api_request to url %s returned status code %d' % (url, int(r.status_code)))
 			return False
 		elif r.headers['content-type'] != 'application/json':
-			log.error(u'_api_request to url %s returned an unsupported content-type %s' % (url, r.headers['content-type']))
+			self.log.error(u'_api_request to url %s returned an unsupported content-type %s' % (url, r.headers['content-type']))
 			return False
 
 		return json.loads(r.content)
 
-
 	def _render(self, template_names, **kwargs):
 		"""Renders the specified template.
-        template_names arg can be a single template name or a list of templates that
-        will be rendered in order.
-        """
+		template_names arg can be a single template name or a list of templates that
+		will be rendered in order.
+		"""
 		result = []
 
 		if type(template_names) != list:
@@ -113,15 +112,14 @@ class Musik:
 
 		return result
 
-
 	def _render_page(self, template_names, **kwargs):
 		"""Renders the specified template as a page complete with header and footer.
-        template_names arg can be a single template name or a list of templates that
-        will be rendered in order.
-        Available kwargs are as follows
-        * title - the title of the page that will appear in the title bar of the browser.
-        * js_appends - a list of javascript files to append in the footer of the page.
-        """
+		template_names arg can be a single template name or a list of templates that
+		will be rendered in order.
+		Available kwargs are as follows
+		* title - the title of the page that will appear in the title bar of the browser.
+		* js_appends - a list of javascript files to append in the footer of the page.
+		"""
 		if type(template_names) != list:
 			# Create one-element list
 			template_names = [template_names]
@@ -132,7 +130,6 @@ class Musik:
 		template_names.append('footer.html')
 
 		return self._render(template_names, **kwargs)
-
 
 	@cherrypy.expose
 	def index(self):
@@ -145,7 +142,6 @@ class Musik:
 			"title": "Home",
 		})
 
-
 	@cherrypy.expose
 	def main(self):
 		"""Renders the index template without a header or footer.
@@ -153,7 +149,6 @@ class Musik:
 		self.log.info(u'main was called')
 
 		return self._render("index.html")
-
 
 	@cherrypy.expose
 	def albums(self, id=None):
@@ -165,15 +160,14 @@ class Musik:
 			#TODO: make this url configurable!
 			albums = self._api_request('http://localhost:8080/api/albums/')
 			if albums:
-				return self._render("albums.html", **{"albums": albums,})
+				return self._render("albums.html", **{"albums": albums, })
 		else:
 			self.log.info(u'albums was called with id %d' % int(id))
 
 			#TODO: make this url configurable!
 			albums = self._api_request('http://localhost:8080/api/albums/id/' + id)
 			if albums:
-				return self._render("album.html", **{"album": albums[0],})
-
+				return self._render("album.html", **{"album": albums[0], })
 
 	@cherrypy.expose
 	def artists(self, id=None):
@@ -185,15 +179,14 @@ class Musik:
 			#TODO: make this url configurable!
 			artists = self._api_request('http://localhost:8080/api/artists/')
 			if artists:
-				return self._render("artists.html", **{"artists": artists,})
+				return self._render("artists.html", **{"artists": artists, })
 		else:
 			self.log.info(u'artists was called with id %d' % int(id))
 
 			#TODO: make this url configurable!
 			artists = self._api_request('http://localhost:8080/api/artists/id/' + id)
 			if artists:
-				return self._render("artist.html", **{"artist": artists[0],})
-
+				return self._render("artist.html", **{"artist": artists[0], })
 
 	@cherrypy.expose
 	def importmedia(self):
@@ -232,11 +225,10 @@ class MusikWebApplication:
 		}
 		cherrypy.tree.mount(Musik(), '/', config=config)
 
-
 	# a blocking call that starts the web application listening for requests
 	def start(self, port=8080):
-		cherrypy.config.update({'server.socket_host': '0.0.0.0',})
-		cherrypy.config.update({'server.socket_port': port,})
+		cherrypy.config.update({'server.socket_host': '0.0.0.0', })
+		cherrypy.config.update({'server.socket_port': port, })
 		cherrypy.engine.start()
 		cherrypy.engine.block()
 

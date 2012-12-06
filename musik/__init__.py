@@ -1,5 +1,6 @@
 import logging
 
+
 def initLogging(moduleName):
 	# set up logging
 	log = logging.getLogger(moduleName)

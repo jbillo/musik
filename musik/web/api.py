@@ -1,5 +1,4 @@
 import json
-import re
 import os
 
 import cherrypy
@@ -57,7 +56,6 @@ class API:
 	def __init__(self):
 		self.log = initLogging(__name__)
 
-
 	@cherrypy.expose
 	def default(self, *params):
 
@@ -68,7 +66,7 @@ class API:
 		#split them into a list of dictionary pairs prior to processing
 		query = []
 		for index in range(1, len(params) - 1, 2):
-			query.append(dict([(params[index],params[index + 1])]))
+			query.append(dict([(params[index], params[index + 1])]))
 
 		#figure out data type the user is requesting
 		if params[0] == 'albums':
@@ -79,7 +77,6 @@ class API:
 			return json.dumps(self.queryTracks(query))
 		if params[0] == 'discs':
 			return json.dumps(self.queryDiscs(query))
-
 
 	def queryAlbums(self, params):
 		"""Assembles an album query by appending query parameters as filters.
@@ -123,10 +120,9 @@ class API:
 				q = q.filter(Album.releasecountry.like('%' + value + '%'))
 
 		album_list = []
-	 	for a in q.order_by(Album.title_sort).all():
-	 		album_list.append(a.as_dict())
+		for a in q.order_by(Album.title_sort).all():
+			album_list.append(a.as_dict())
 		return album_list
-
 
 	def queryDiscs(self, params):
 		"""Assembles an disc query by appending query parameters as filters.
@@ -155,10 +151,9 @@ class API:
 				q = q.filter(Disc.musicbrainz_discid.like('%' + value + '%'))
 
 		disc_list = []
-	 	for d in q.order_by(Disc.id).all():
-	 		disc_list.append(d.as_dict())
+		for d in q.order_by(Disc.id).all():
+			disc_list.append(d.as_dict())
 		return disc_list
-
 
 	def queryArtists(self, params):
 		"""Assembles an artist query by appending query parameters as filters.
@@ -184,10 +179,9 @@ class API:
 				q = q.filter(Artist.musicbrainz_artistid.like('%' + value + '%'))
 
 		artist_list = []
-	 	for a in q.order_by(Artist.name_sort).all():
-	 		artist_list.append(a.as_dict())
+		for a in q.order_by(Artist.name_sort).all():
+			artist_list.append(a.as_dict())
 		return artist_list
-
 
 	def queryTracks(self, params):
 		"""Assembles an track query by appending query parameters as filters.

@@ -1,5 +1,6 @@
 from datetime import datetime
-import os, os.path
+import os
+import os.path
 
 from sqlalchemy import Column, create_engine, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
@@ -50,10 +51,10 @@ class Artist(Base):
 	Internally, all are treated as artists and foreign key to this table.
 	"""
 	__tablename__ = 'artists'
-	id = Column(Integer, primary_key=True)	# unique id
-	name = Column(String)					# artist name
-	name_sort = Column(String)				# sortable artist name
-	musicbrainz_artistid = Column(String)	# unique 36-digit musicbrainz hex string
+	id = Column(Integer, primary_key=True)	 # unique id
+	name = Column(String)					 # artist name
+	name_sort = Column(String)				 # sortable artist name
+	musicbrainz_artistid = Column(String)	 # unique 36-digit musicbrainz hex string
 
 	# TODO: make musicbrainz_artistid unique!
 
@@ -81,19 +82,19 @@ class Album(Base):
 	collection of related songs that may or may not have a physical representation.
 	"""
 	__tablename__ = 'albums'
-	id = Column(Integer, primary_key=True)					# unique id
-	title = Column(String)									# the title of the album
-	title_sort = Column(String)								# sortable title of the album
-	artist_id = Column(Integer, ForeignKey('artists.id'))	# the artist that recorded this album
-	asin = Column(String)									# amazon standard identification number - only if physical
-	barcode = Column(String)								# physical album barcode
-	compilation = Column(Boolean)							# whether or not this album is a compilation
-	media_type = Column(String)								# the type of media (CD, etc)
-	musicbrainz_albumid = Column(String)					# unique 36-digit musicbrainz hex string
-	musicbrainz_albumstatus = Column(String)				# unique 36-digit musicbrainz hex string
-	musicbrainz_albumtype = Column(String)					# unique 36-digit musicbrainz hex string
-	organization = Column(String)							# organization that released the album (usually a record company)
-	releasecountry = Column(String)							# the country that this album was released in
+	id = Column(Integer, primary_key=True)					 # unique id
+	title = Column(String)									 # the title of the album
+	title_sort = Column(String)								 # sortable title of the album
+	artist_id = Column(Integer, ForeignKey('artists.id'))	 # the artist that recorded this album
+	asin = Column(String)									 # amazon standard identification number - only if physical
+	barcode = Column(String)								 # physical album barcode
+	compilation = Column(Boolean)							 # whether or not this album is a compilation
+	media_type = Column(String)								 # the type of media (CD, etc)
+	musicbrainz_albumid = Column(String)					 # unique 36-digit musicbrainz hex string
+	musicbrainz_albumstatus = Column(String)				 # unique 36-digit musicbrainz hex string
+	musicbrainz_albumtype = Column(String)					 # unique 36-digit musicbrainz hex string
+	organization = Column(String)							 # organization that released the album (usually a record company)
+	releasecountry = Column(String)							 # the country that this album was released in
 
 	artist = relationship('Artist', backref=backref('albums', order_by=id))
 
@@ -119,19 +120,19 @@ class Disc(Base):
 	while digital releases will not have any.
 	CD - Pink Floyd's The Wall was released on two distinct discs
 	LP - Pink Floyd's The Wall was released on two platters, each with two
-		 sides. We represent this with four discs, one for each side.
+		sides. We represent this with four discs, one for each side.
 	Cassette - Pink Floyd's The Wall was released on two cassette tapes,
-			   each with two sides. We represent this with four discs, one
-			   for each side.
+			each with two sides. We represent this with four discs, one
+			for each side.
 	"""
 	__tablename__ = 'discs'
 
 	# columns
-	id = Column(Integer, primary_key=True)				# unique id
-	album_id = Column(Integer, ForeignKey('albums.id'))	# the album that this disc belongs to
-	discnumber = Column(String)							# the play order of this disc in the collection
-	disc_subtitle = Column(String)						# the subtitle (if applicable) of this disc
-	musicbrainz_discid = Column(String)					# unique 36-digit musicbrainz hex string
+	id = Column(Integer, primary_key=True)				 # unique id
+	album_id = Column(Integer, ForeignKey('albums.id'))	 # the album that this disc belongs to
+	discnumber = Column(String)							 # the play order of this disc in the collection
+	disc_subtitle = Column(String)						 # the subtitle (if applicable) of this disc
+	musicbrainz_discid = Column(String)					 # unique 36-digit musicbrainz hex string
 
 	# relationships
 	album = relationship('Album', backref=backref('discs', order_by=discnumber, lazy='dynamic'))
@@ -159,37 +160,37 @@ class Track(Base):
 	__tablename__ = 'tracks'
 
 	# columns
-	id = Column(Integer, primary_key=True)						# unique id
-	uri = Column(String)										# physical location of the track file
-	artist_id = Column(Integer, ForeignKey('artists.id'))		# the artist that recorded the track
-	album_id = Column(Integer, ForeignKey('albums.id'))			# the album that contains the track
-	album_artist_id = Column(Integer, ForeignKey('artists.id'))	# the artist that released the album
-	arranger_id = Column(Integer, ForeignKey('artists.id'))		# the artist that arranged the track
-	author_id = Column(Integer, ForeignKey('artists.id'))		# the author that wrote the track
-	bpm = Column(Integer)										# beats per minute
-	composer_id = Column(Integer, ForeignKey('artists.id'))		# the artist that composed the track
-	conductor_id = Column(Integer, ForeignKey('artists.id'))	# the artist that conducted the track
-	copyright = Column(String)									# copyright information
-	date = Column(String)										# date that the track was released
-	disc_id = Column(Integer, ForeignKey('discs.id'))			# disc of the album that the track appeared on
-	encodedby = Column(String)									# encoder that created the digital file
-	genre = Column(String)										# genre of track contents
-	isrc = Column(String) 										# ISO 3901 12-character International Standard Recording Code
-	length = Column(BigInteger)									# length of the track in milliseconds
-	lyricist_id = Column(Integer, ForeignKey('artists.id'))		# the artist that wrote the lyrics of the track
-	mood = Column(String)										# description of the mood of the track
-	musicbrainz_trackid = Column(String)						# unique 36-digit musicbrainz hex string
-	musicbrainz_trmid = Column(String)							# semi-unique trm fingerprint
-	musicip_fingerprint = Column(String)						# unique musicip (gracenote) fingerprint
-	musicip_puid = Column(String)								# unique musicip (gracenote) id
-	performer_id = Column(Integer, ForeignKey('artists.id'))	# artist that performed the track
-	title = Column(String)										# title of the track
-	title_sort = Column(String)									# sortable title of the track
-	tracknumber = Column(Integer)								# order of the track on the disc
-	subtitle = Column(String)									# sub title of the track
-	website = Column(String)									# a website for the track
-	playcount = Column(Integer)									# number of times the track was played
-	rating = Column(Integer)									# rating of the track (0-255)
+	id = Column(Integer, primary_key=True)						 # unique id
+	uri = Column(String)										 # physical location of the track file
+	artist_id = Column(Integer, ForeignKey('artists.id'))		 # the artist that recorded the track
+	album_id = Column(Integer, ForeignKey('albums.id'))			 # the album that contains the track
+	album_artist_id = Column(Integer, ForeignKey('artists.id'))	 # the artist that released the album
+	arranger_id = Column(Integer, ForeignKey('artists.id'))		 # the artist that arranged the track
+	author_id = Column(Integer, ForeignKey('artists.id'))		 # the author that wrote the track
+	bpm = Column(Integer)										 # beats per minute
+	composer_id = Column(Integer, ForeignKey('artists.id'))		 # the artist that composed the track
+	conductor_id = Column(Integer, ForeignKey('artists.id'))	 # the artist that conducted the track
+	copyright = Column(String)									 # copyright information
+	date = Column(String)										 # date that the track was released
+	disc_id = Column(Integer, ForeignKey('discs.id'))			 # disc of the album that the track appeared on
+	encodedby = Column(String)									 # encoder that created the digital file
+	genre = Column(String)										 # genre of track contents
+	isrc = Column(String) 										 # ISO 3901 12-character International Standard Recording Code
+	length = Column(BigInteger)									 # length of the track in milliseconds
+	lyricist_id = Column(Integer, ForeignKey('artists.id'))		 # the artist that wrote the lyrics of the track
+	mood = Column(String)										 # description of the mood of the track
+	musicbrainz_trackid = Column(String)						 # unique 36-digit musicbrainz hex string
+	musicbrainz_trmid = Column(String)							 # semi-unique trm fingerprint
+	musicip_fingerprint = Column(String)						 # unique musicip (gracenote) fingerprint
+	musicip_puid = Column(String)								 # unique musicip (gracenote) id
+	performer_id = Column(Integer, ForeignKey('artists.id'))	 # artist that performed the track
+	title = Column(String)										 # title of the track
+	title_sort = Column(String)									 # sortable title of the track
+	tracknumber = Column(Integer)								 # order of the track on the disc
+	subtitle = Column(String)									 # sub title of the track
+	website = Column(String)									 # a website for the track
+	playcount = Column(Integer)									 # number of times the track was played
+	rating = Column(Integer)									 # rating of the track (0-255)
 
 	# relationships
 	artist = relationship('Artist', primaryjoin='Artist.id == Track.artist_id')

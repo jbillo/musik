@@ -15,11 +15,12 @@ from musik import initLogging
 from musik.db import DatabaseWrapper, ImportTask, Track, Album, Artist, Disc
 from musik.util import EasygoingDictionary
 
+
 class ImportThread(threading.Thread):
 
-	running = True		# whether or not the thread should continue to run
-	sa_session = None	# database session
-	log = None			# logging instance
+	running = True		 # whether or not the thread should continue to run
+	sa_session = None	 # database session
+	log = None			 # logging instance
 
 	def __init__(self):
 		"""Creates a new instance of ImportThread and connects to the database.
@@ -43,7 +44,7 @@ class ImportThread(threading.Thread):
 				# find the first unprocessed import task
 				try:
 					task = self.sa_session.query(ImportTask).filter(ImportTask.started == None).order_by(ImportTask.created).first()
-				except OperationalError as ex:
+				except OperationalError:
 					# Ran into this when my SQLite database was locked.
 					self.log.error(u'Operational error accessing database. Ensure it is not open by another process.')
 					break
@@ -75,7 +76,6 @@ class ImportThread(threading.Thread):
 				self.sa_session.close()
 				self.sa_session = None
 
-
 	# adds a directory to the local library
 	# in practice, this is a breadth-first searche over the specified directory and its
 	# subdirectories that places appropriate files back into the import queue
@@ -105,7 +105,6 @@ class ImportThread(threading.Thread):
 					else:
 						self.log.debug(u'Ignoring file %s', newuri)
 
-
 	# returns True if the mime type of the specified uri is supported
 	# this should only support audio files
 	# TODO: query gstreamer (or whatever other backend we're using) to determine support up front
@@ -116,7 +115,6 @@ class ImportThread(threading.Thread):
 		else:
 			return False
 
-
 	def importFile(self, uri):
 		self.log.debug(u'ImportFile called with uri %s', uri)
 
@@ -126,7 +124,6 @@ class ImportThread(threading.Thread):
 
 		# Try to read the metadata appropriately.
 		self.createTrack(uri)
-
 
 	def createTrack(self, uri):
 		"""Creates a track object out of the specified URI.
@@ -448,7 +445,7 @@ class ImportThread(threading.Thread):
 		# track name = file name, album title = last directory in path,
 		# artist name = second last directory in path.
 		(dirName, fileName) = os.path.split(uri)
-		(fileBaseName, fileExtension)=os.path.splitext(fileName)
+		(fileBaseName, fileExtension) = os.path.splitext(fileName)
 		if track.title == None:
 			track.title = fileBaseName
 			track.title_sort = fileBaseName
@@ -473,7 +470,6 @@ class ImportThread(threading.Thread):
 
 		#commit the transaction
 		self.sa_session.commit()
-
 
 	def findArtist(self, name=None, name_sort=None, musicbrainz_id=None):
 		"""Searches the database for an existing artist that matches the specified criteria.
@@ -528,7 +524,6 @@ class ImportThread(threading.Thread):
 
 		# return the artist that we found and/or created
 		return artist
-
 
 	# TODO: Need support for album artist?
 	def findAlbum(self, title=None, title_sort=None, musicbrainz_id=None, artist=None, metadata=None):
@@ -642,7 +637,6 @@ class ImportThread(threading.Thread):
 
 		return album
 
-
 	def findDisc(self, album=None, discnumber=None, discsubtitle=None, musicbrainz_id=None):
 		"""Tries to find an existing disc that matches the specified criteria.
 		If an existing disc cannot be found, creates a new disc with the specified criteria.
@@ -739,7 +733,6 @@ class ImportThread(threading.Thread):
 				self.sa_session.add(disc)
 
 		return disc
-
 
 	def stop(self):
 		"""Cleans up the thread"""
