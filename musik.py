@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
 	# get logging set up
 	# confirm that logging directory exists
-	log_dir = os.path.join(os.dirname(__file__), "logs") # default logging location
+	log_dir = os.path.join(os.path.dirname(__file__), "logs") # default logging location
 	if not os.path.isdir(log_dir):
 		try:
 			os.mkdir(log_dir)

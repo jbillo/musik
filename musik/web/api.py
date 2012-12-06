@@ -68,6 +68,10 @@ class OggStream:
 		cherrypy.response.headers['Content-Type'] = 'audio/ogg'
 
 		def yield_data():
+			"""TODO: this function silently eats exceptions, which will just cause the
+			audio stream to end, and the client player to choke. Ideally, we would notify
+			the user of the error as well.
+			"""
 			try:
 				self.log.info(u'OggStream.track trying to open %s for streaming' % unicode(uri))
 				self.stream = streaming.GstAudioFile(uri)
@@ -75,6 +79,14 @@ class OggStream:
 				self.log.info(u'OggStream.track started streaming %s' % unicode(uri))
 				for block in self.stream:
 					yield block
+			except GStreamerError as e:
+				self.log.error(u'An unknown GStreamer error ocurred %s' % unicode(e))
+			except UnknownTypeError as e:
+				self.log.error(u'GStreamer could not decode the file contents. Ensure that you have the proper plugins installed. %s' % unicode(e))
+			except FileReadError as e:
+				self.log.error(u'GStreamer could not open the file. Ensure that it exists and is readable. %s' % unicode(e))
+			except NoStreamError as e:
+				self.log.error(u'GStreamer could not find an audio stream in the file. Ensure that it is a valid audio format. %s' % unicode(e))
 			finally:
 				self.log.info(u'OggStream.track streaming is complete. Closing stream.')
 				if self.stream is not None:

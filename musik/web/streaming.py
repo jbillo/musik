@@ -149,15 +149,11 @@ class GstAudioFile(object):
         self.mux = gst.element_factory_make("oggmux")
         self.sink = gst.element_factory_make('appsink')
 
-        self.log.info("pipeline assembled")
-
         # Register for bus signals.
         bus = self.pipeline.get_bus()
         bus.add_signal_watch()
         bus.connect("message::eos", self._message)
         bus.connect("message::error", self._message)
-
-        self.log.info("bus connected")
 
         # Configure the input/decoding stage.
         print "path is %s" % path
@@ -169,8 +165,6 @@ class GstAudioFile(object):
 
         # And a callback if decoding fails.
         self.dec.connect("unknown-type", self._unkown_type)
-
-        self.log.info("decoder configured")
 
         # Set up the characteristics of the output. We don't want to
         # drop any data (nothing is real-time here); we should bound
@@ -185,13 +179,10 @@ class GstAudioFile(object):
         self.sink.set_property('emit-signals', True)
         self.sink.connect("new-buffer", self._new_buffer)
 
-        self.log.info("sink configured")
-
         # We'll need to know when the stream becomes ready and we get
         # its attributes. This semaphore will become available when the
         # caps are received. That way, when __init__() returns, the file
         # (and its attributes) will be ready for reading.
-        self.log.info("waiting on semaphore")
         self.ready_sem = threading.Semaphore(0)
         self.caps_handler = self.sink.get_pad("sink").connect(
             "notify::caps", self._notify_caps
@@ -205,8 +196,6 @@ class GstAudioFile(object):
         self.enc.link(self.mux)
         self.mux.link(self.sink)
 
-        self.log.info("pipeline assembled")
-
         # Set up the queue for data and run the main thread.
         self.queue = Queue.Queue(QUEUE_SIZE)
         self.thread = get_loop_thread()
@@ -215,13 +204,12 @@ class GstAudioFile(object):
         self.read_exc = None
 
         # Return as soon as the stream is ready!
-        self.log.info("starting stream")
         self.running = True
         self.pipeline.set_state(gst.STATE_PLAYING)
         self.ready_sem.acquire()
         if self.read_exc:
             # An error occurred before the stream became ready.
-            self.log.error("an error ocurred")
+            self.log.error("%s" % unicode(self.read_exc))
             self.close(True)
             raise self.read_exc
 
