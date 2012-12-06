@@ -192,7 +192,7 @@ class Musik:
 	def importmedia(self):
 		self.log.info(u'importmedia was called')
 
-		return self._render("importmedia.html", **{
+		return self._render_page("importmedia.html", **{
 			"js_appends": ['importmedia.js'],
 		})
 
