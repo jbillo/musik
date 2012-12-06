@@ -41,7 +41,7 @@ workon musik-venv
 Install dependencies from your distribution's package manager
 ```bash
 sudo apt-get update
-sudo apt-get install libgstreamer-0.10 gstreamer0.10-plugins-good gstreamer0.10-plugins-bad gstreamer0.10-plugins-ugly python-gst0.10
+sudo apt-get install libgstreamer0.10-0 gstreamer0.10-plugins-good gstreamer0.10-plugins-bad gstreamer0.10-plugins-ugly python-gst0.10
 ```
 
 Most modern distributions will already have these packages installed, so this step may or may not be necessary.
@@ -56,10 +56,10 @@ Run the musik server
 ``` bash
 python musik.py
 ```
-The Musik server starts up by default on port 8080
-point your browser at [http://localhost:8080/](http://localhost:8080/)
+The Musik server starts up by default on port 8080; 
+point your browser at [http://localhost:8080/](http://localhost:8080/) to access the interface.
 
-Optionally you can set a PORT environment variable
+Optionally you can set a PORT environment variable:
 
 ``` bash
 export PORT=5000

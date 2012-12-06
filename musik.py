@@ -39,15 +39,6 @@ if __name__ == '__main__':
 	threads = []
 
 	# get logging set up
-	# confirm that logging directory exists
-	log_dir = os.path.join(os.dirname(__file__), "logs")  # default logging location
-	if not os.path.isdir(log_dir):
-		try:
-			os.mkdir(log_dir)
-		except IOError:
-			print u"Could not create log directory %s" % log_dir
-			sys.exit(1)
-
 	log = initLogging(__name__)
 
 	# TODO: also register for CherryPy shutdown messages
