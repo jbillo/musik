@@ -4,6 +4,7 @@ import os
 import cherrypy
 
 from musik import initLogging
+from musik.web import streaming
 from musik.db import Album, Artist, ImportTask, Track, Disc
 
 
@@ -46,12 +47,62 @@ class Import:
 		return ret
 
 
+class OggStream:
+	log = None
+	stream = None
+
+	def __init__(self):
+		self.log = initLogging(__name__)
+
+	@cherrypy.expose
+	def track(self, id):
+		"""Transcodes the track with the specified unique id to ogg vorbis and
+		streams it to the client. Streaming begins immediately, even if the
+		entire file has not yet been transcoded."""
+
+		# look up the track in the database
+		self.log.info(u'OggStream.track called with id %s' % unicode(id))
+		uri = cherrypy.request.db.query(Track).filter(Track.id == id).first().uri
+
+		cherrypy.response.headers['Content-Type'] = 'audio/ogg'
+
+		def yield_data():
+			"""TODO: this function silently eats exceptions, which will just cause the
+			audio stream to end, and the client player to choke. Ideally, we would notify
+			the user of the error as well.
+			"""
+			try:
+				self.log.info(u'OggStream.track trying to open %s for streaming' % unicode(uri))
+				self.stream = streaming.GstAudioFile(uri)
+
+				self.log.info(u'OggStream.track started streaming %s' % unicode(uri))
+				for block in self.stream:
+					yield block
+			except GStreamerError as e:
+				self.log.error(u'An unknown GStreamer error ocurred %s' % unicode(e))
+			except UnknownTypeError as e:
+				self.log.error(u'GStreamer could not decode the file contents. Ensure that you have the proper plugins installed. %s' % unicode(e))
+			except FileReadError as e:
+				self.log.error(u'GStreamer could not open the file. Ensure that it exists and is readable. %s' % unicode(e))
+			except NoStreamError as e:
+				self.log.error(u'GStreamer could not find an audio stream in the file. Ensure that it is a valid audio format. %s' % unicode(e))
+			finally:
+				self.log.info(u'OggStream.track streaming is complete. Closing stream.')
+				if self.stream is not None:
+					self.stream.close()
+					self.stream = None
+
+		return yield_data()
+	track._cp_config = {'response.stream': True}
+
+
 # defines an api with a dynamic url scheme composed of /<tag>/<value>/ pairs
 # these pairs are assembled into an SQL query. Each term is combined with the AND operator.
 # unknown <tag> elements are ignored.
 class API:
 	log = None
 	importmedia = Import()
+	stream = OggStream()
 
 	def __init__(self):
 		self.log = initLogging(__name__)
